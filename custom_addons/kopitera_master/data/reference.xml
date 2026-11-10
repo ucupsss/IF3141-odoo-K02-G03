@@ -1,0 +1,62 @@
+<?xml version='1.0' encoding='utf-8'?>
+<odoo noupdate="1">
+  <record id="sequence_recipe" model="ir.sequence">
+    <field name="name">Pengajuan Resep Kopitera</field>
+    <field name="code">kopitera.recipe</field>
+    <field name="prefix">KP/</field>
+    <field name="padding">5</field>
+  </record>
+  <record id="menu_kopi_susu" model="kopitera.menu">
+    <field name="name">Es Kopi Susu — Contoh</field>
+    <field name="division">bar</field>
+    <field name="description">Data fiktif untuk demonstrasi tugas; bukan resep operasional Kopitera.</field>
+    <field name="allergens">Susu</field>
+  </record>
+  <record id="menu_nasi_goreng" model="kopitera.menu">
+    <field name="name">Nasi Goreng — Contoh</field>
+    <field name="division">kitchen</field>
+    <field name="description">Data fiktif untuk demonstrasi tugas; bukan resep operasional Kopitera.</field>
+    <field name="allergens">Telur, kedelai</field>
+  </record>
+  <record id="ingredient_coffee" model="kopitera.ingredient">
+    <field name="name">Espresso</field>
+    <field name="unit">ml</field>
+    <field name="division">bar</field>
+  </record>
+  <record id="ingredient_milk" model="kopitera.ingredient">
+    <field name="name">Susu Cair</field>
+    <field name="unit">ml</field>
+    <field name="division">shared</field>
+  </record>
+  <record id="ingredient_sugar" model="kopitera.ingredient">
+    <field name="name">Sirup Gula Aren</field>
+    <field name="unit">ml</field>
+    <field name="division">bar</field>
+  </record>
+  <record id="ingredient_ice" model="kopitera.ingredient">
+    <field name="name">Es Batu</field>
+    <field name="unit">g</field>
+    <field name="division">bar</field>
+  </record>
+  <record id="ingredient_rice" model="kopitera.ingredient">
+    <field name="name">Nasi Putih</field>
+    <field name="unit">g</field>
+    <field name="division">kitchen</field>
+  </record>
+  <record id="ingredient_egg" model="kopitera.ingredient">
+    <field name="name">Telur</field>
+    <field name="unit">pcs</field>
+    <field name="division">kitchen</field>
+  </record>
+  <record id="ingredient_soy" model="kopitera.ingredient">
+    <field name="name">Kecap Manis</field>
+    <field name="unit">ml</field>
+    <field name="division">kitchen</field>
+  </record>
+  <record id="sequence_master_change" model="ir.sequence">
+    <field name="name">Pengajuan Master Kopitera</field>
+    <field name="code">kopitera.master.change</field>
+    <field name="prefix">KM/</field>
+    <field name="padding">5</field>
+  </record>
+</odoo>

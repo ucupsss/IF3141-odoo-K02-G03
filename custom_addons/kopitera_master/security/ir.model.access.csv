@@ -1,0 +1,10 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_menu_read,menu read,model_kopitera_menu,group_user,1,0,0,0
+access_menu_setup,menu setup,model_kopitera_menu,base.group_system,1,1,1,0
+access_ingredient_read,ingredient read,model_kopitera_ingredient,group_user,1,0,0,0
+access_ingredient_setup,ingredient setup,model_kopitera_ingredient,base.group_system,1,1,1,0
+access_recipe_read,recipe read,model_kopitera_recipe,group_user,1,0,0,0
+access_recipe_edit,recipe edit,model_kopitera_recipe,group_editor,1,1,1,1
+access_recipe_line_read,recipe_line read,model_kopitera_recipe_line,group_user,1,0,0,0
+access_recipe_line_edit,recipe_line edit,model_kopitera_recipe_line,group_editor,1,1,1,1
+access_master_change_editor,master change editor,model_kopitera_master_change,group_editor,1,1,1,1

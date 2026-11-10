@@ -1,0 +1,104 @@
+<odoo>
+  <record id="change_tree" model="ir.ui.view">
+    <field name="name">kopitera.master.change.tree</field><field name="model">kopitera.master.change</field>
+    <field name="arch" type="xml">
+      <tree decoration-success="state == 'released'" decoration-danger="state == 'rejected'" decoration-warning="state == 'revision'">
+      <field name="name"/><field name="kind"/><field name="operation"/><field name="proposed_name"/><field name="division"/><field name="author_id"/><field name="release_date"/><field name="state" widget="badge"/>
+    </tree></field>
+  </record>
+  <record id="change_search" model="ir.ui.view">
+    <field name="name">kopitera.master.change.search</field><field name="model">kopitera.master.change</field>
+    <field name="arch" type="xml">
+      <search><field name="name"/><field name="proposed_name"/><field name="author_id"/>
+      <filter name="mine" string="Pengajuan Saya" domain="[('author_id','=',uid)]"/><separator/>
+      <filter name="review" string="Perlu Pemeriksaan" domain="[('state','=','review')]"/>
+      <filter name="approval" string="Perlu Persetujuan" domain="[('state','=','approval')]"/>
+      <filter name="release" string="Menunggu Rilis" domain="[('state','=','approved')]"/>
+      <filter name="released" string="Sudah Dirilis" domain="[('state','=','released')]"/>
+      <group expand="0" string="Kelompokkan"><filter name="status" string="Status" context="{'group_by':'state'}"/><filter name="kind" string="Jenis Data" context="{'group_by':'kind'}"/></group>
+    </search></field>
+  </record>
+  <record id="change_form" model="ir.ui.view">
+    <field name="name">kopitera.master.change.form</field><field name="model">kopitera.master.change</field>
+    <field name="arch" type="xml">
+      <form string="Pengajuan Menu dan Bahan">
+      <header>
+        <button name="action_submit" type="object" string="Kirim untuk Diperiksa" class="oe_highlight" invisible="state not in ['draft','revision'] or not is_author"/>
+        <button name="action_review" type="object" string="Sesuai — Teruskan" class="oe_highlight" invisible="state != 'review' or not can_review"/>
+        <button name="action_return" type="object" string="Minta Perbaikan" invisible="state != 'review' or not can_review"/>
+        <button name="action_approve" type="object" string="Setujui" class="oe_highlight" groups="kopitera_master.group_manager" invisible="state != 'approval'"/>
+        <button name="action_reject" type="object" string="Tolak" groups="kopitera_master.group_manager" invisible="state != 'approval'"/>
+        <button name="action_release" type="object" string="Rilis Perubahan" class="oe_highlight" groups="kopitera_master.group_manager" invisible="state != 'approved'" confirm="Terapkan perubahan yang disetujui menjadi data berlaku? Penonaktifan menu juga mengarsipkan resep berlakunya."/>
+        <button name="action_request_update" type="object" string="Minta Pembaruan" groups="kopitera_master.group_manager" invisible="state != 'approved'" confirm="Kembalikan ke pengaju? Pemeriksaan dan persetujuan akan diulang."/>
+        <field name="state" widget="statusbar" statusbar_visible="draft,review,approval,approved,released"/>
+      </header>
+      <sheet>
+        <field name="is_author" invisible="1"/>
+        <field name="can_review" invisible="1"/>
+        <div class="oe_title"><h1><field name="name"/></h1></div>
+        <div class="alert alert-info" role="alert" invisible="state == 'released'">Data berlaku belum berubah. Perubahan diterapkan hanya setelah Manager Area menjalankan rilis.</div>
+        <div class="alert alert-success" role="alert" invisible="state != 'released'">Pengajuan sudah dirilis. Data sebelum dan sesudah tersimpan pada tab Perbandingan.</div>
+        <group><group>
+          <field name="kind" readonly="state not in ['draft','revision'] or not is_author"/>
+          <field name="operation" readonly="state not in ['draft','revision'] or not is_author"/>
+          <field name="division" readonly="state not in ['draft','revision'] or not is_author"/>
+          <field name="menu_id" invisible="kind != 'menu' or operation == 'create'" required="kind == 'menu' and operation != 'create'" readonly="state not in ['draft','revision'] or not is_author" options="{'no_create': True}" domain="[('division','=',division)]"/>
+          <field name="ingredient_id" invisible="kind != 'ingredient' or operation == 'create'" required="kind == 'ingredient' and operation != 'create'" readonly="state not in ['draft','revision'] or not is_author" options="{'no_create': True}" domain="[('division','in',[division,'shared'])]"/>
+        </group><group>
+          <field name="author_id"/><field name="reviewer_id"/><field name="approver_id"/>
+          <field name="release_date" readonly="state != 'approval'" groups="kopitera_master.group_manager"/>
+          <field name="release_date" readonly="1" groups="!kopitera_master.group_manager"/>
+          <field name="released_at" invisible="state != 'released'"/>
+          <field name="result_menu_id" invisible="not result_menu_id"/>
+          <field name="result_ingredient_id" invisible="not result_ingredient_id"/>
+        </group></group>
+        <notebook>
+          <page string="Data yang Diusulkan">
+            <group invisible="operation == 'deactivate'">
+              <field name="proposed_name" required="operation != 'deactivate'" readonly="state not in ['draft','revision'] or not is_author"/>
+              <field name="description" invisible="kind != 'menu'" readonly="state not in ['draft','revision'] or not is_author"/>
+              <field name="allergens" invisible="kind != 'menu'" readonly="state not in ['draft','revision'] or not is_author"/>
+              <field name="unit" invisible="kind != 'ingredient'" required="kind == 'ingredient' and operation != 'deactivate'" readonly="state not in ['draft','revision'] or not is_author"/>
+              <field name="usage" invisible="kind != 'ingredient'" required="kind == 'ingredient' and operation != 'deactivate'" readonly="state not in ['draft','revision'] or not is_author"/>
+            </group>
+            <div class="alert alert-warning" role="alert" invisible="operation != 'deactivate'">Data akan dinonaktifkan setelah rilis. Bahan yang masih digunakan resep berlaku tidak dapat dinonaktifkan.</div>
+            <group><field name="reason" placeholder="Jelaskan alasan penambahan, perubahan, atau penonaktifan..." readonly="state not in ['draft','revision'] or not is_author"/></group>
+          </page>
+          <page string="Perbandingan"><div class="row g-3"><div class="col-12 col-lg-6"><h3>Data sebelumnya</h3><field name="before_text" nolabel="1" class="d-block w-100"/></div><div class="col-12 col-lg-6"><h3>Usulan / hasil rilis</h3><field name="proposed_text" nolabel="1" class="d-block w-100"/></div></div></page>
+          <page string="Pemeriksaan dan Keputusan"><group>
+            <field name="review_note" readonly="state != 'review' or not can_review"/>
+            <field name="decision_note" readonly="state != 'approval'" groups="kopitera_master.group_manager"/>
+            <field name="decision_note" readonly="1" groups="!kopitera_master.group_manager"/>
+          </group></page>
+        </notebook>
+      </sheet>
+      <div class="oe_chatter"><field name="message_follower_ids"/><field name="activity_ids"/><field name="message_ids"/></div>
+    </form></field>
+  </record>
+  <record id="action_change_menu" model="ir.actions.act_window"><field name="name">Pengajuan Menu</field><field name="res_model">kopitera.master.change</field><field name="view_mode">tree,form</field><field name="domain">[('kind','=','menu')]</field><field name="context">{'default_kind':'menu'}</field></record>
+  <record id="action_change_ingredient" model="ir.actions.act_window"><field name="name">Pengajuan Bahan Baku</field><field name="res_model">kopitera.master.change</field><field name="view_mode">tree,form</field><field name="domain">[('kind','=','ingredient')]</field><field name="context">{'default_kind':'ingredient'}</field></record>
+  <menuitem id="menu_change_menu" name="Pengajuan Menu" parent="root_menu" action="action_change_menu" sequence="31" groups="kopitera_master.group_editor"/>
+  <menuitem id="menu_change_ingredient" name="Pengajuan Bahan" parent="root_menu" action="action_change_ingredient" sequence="32" groups="kopitera_master.group_editor"/>
+  <record id="menu_form_lifecycle" model="ir.ui.view"><field name="name">kopitera.menu.form.lifecycle</field><field name="model">kopitera.menu</field><field name="inherit_id" ref="menu_form"/>
+    <field name="arch" type="xml">
+      <xpath expr="//header" position="inside"><button name="action_propose_change" type="object" string="Ajukan Ubah / Nonaktifkan Menu" groups="kopitera_master.group_editor" invisible="not active"/></xpath>
+      <xpath expr="//button[@name='action_propose_recipe']" position="attributes"><attribute name="invisible">not active</attribute></xpath>
+      <xpath expr="//field[@name='allergens']" position="after"><field name="active"/><field name="revision" groups="kopitera_master.group_editor"/></xpath>
+    </field>
+  </record>
+  <record id="ingredient_form_lifecycle" model="ir.ui.view"><field name="name">kopitera.ingredient.form.lifecycle</field><field name="model">kopitera.ingredient</field><field name="inherit_id" ref="ingredient_form"/>
+    <field name="arch" type="xml">
+      <xpath expr="//sheet" position="before"><header><button name="action_propose_change" type="object" string="Ajukan Ubah / Nonaktifkan Bahan" class="oe_highlight" groups="kopitera_master.group_editor" invisible="not active"/></header></xpath>
+      <xpath expr="//field[@name='unit']" position="after"><field name="active"/><field name="revision" groups="kopitera_master.group_editor"/></xpath>
+    </field>
+  </record>
+  <record id="recipe_form_lifecycle" model="ir.ui.view"><field name="name">kopitera.recipe.form.lifecycle</field><field name="model">kopitera.recipe</field><field name="inherit_id" ref="recipe_form"/>
+    <field name="arch" type="xml">
+      <xpath expr="//button[@name='action_release']" position="after"><button name="action_request_update" type="object" string="Minta Pembaruan" groups="kopitera_master.group_manager" invisible="state != 'approved'" confirm="Kembalikan resep ke pengaju untuk diperiksa dan disetujui ulang?"/></xpath>
+      <xpath expr="//field[@name='is_author']" position="after"><field name="can_review" invisible="1"/></xpath>
+      <xpath expr="//button[@name='action_review']" position="attributes"><attribute name="invisible">state != 'review' or not can_review</attribute></xpath>
+      <xpath expr="//button[@name='action_return']" position="attributes"><attribute name="invisible">state != 'review' or not can_review</attribute></xpath>
+      <xpath expr="//field[@name='review_note']" position="attributes"><attribute name="readonly">state != 'review' or not can_review</attribute></xpath>
+    </field>
+  </record>
+</odoo>

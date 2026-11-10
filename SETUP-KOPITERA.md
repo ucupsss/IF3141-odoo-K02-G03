@@ -19,7 +19,7 @@ Odoo hanya dibuka pada alamat lokal laptop ini (127.0.0.1). PostgreSQL tidak mem
 - Inventory (`stock`): dependensi Manufacturing; bukan perluasan lingkup tugas menjadi pengelolaan stok.
 - Starter Cats (`starter_cats`): contoh resmi tutorial untuk memeriksa pemasangan custom add-on. Ini bukan modul Kopitera dan tidak dihitung sebagai modul buatan kelompok.
 
-Modul PLM Enterprise tidak tersedia dalam Odoo Community. Alur pengajuan, pemeriksaan, persetujuan, rilis, dan versi resep Kopitera perlu diwujudkan melalui modul kustom pada tahap berikutnya. Setup dasar ini belum menerapkan 13 use case, data contoh Kopitera, atau pembatasan akun uji per peran.
+Modul PLM Enterprise tidak tersedia dalam Odoo Community. Alur pengajuan, pemeriksaan, persetujuan, rilis, dan versi resep Kopitera diwujudkan melalui modul kustom. Setup dasar kemudian dilanjutkan dengan modul `kopitera_master`: alur resep, data contoh, dan akun uji per peran sudah tersedia. Ini belum mencakup seluruh 13 use case. Lihat `docs/COBA-KOPITERA.md` untuk mencoba dan `docs/PEMETAAN-LAYAR-M4.md` untuk cakupan yang belum selesai.
 
 ## Perintah sehari-hari
 
@@ -62,3 +62,15 @@ Pengaturan perusahaan, mata uang, dan zona waktu pada bagian awal merupakan kond
 ## Penyesuaian dokumen tugas
 
 Platform implementasi sekarang adalah Odoo 17 Community lokal melalui Docker, mengikuti tutorial. Pernyataan Odoo Online Standard, penggunaan PLM Enterprise, serta larangan modul kustom pada Milestone 2 dan 3 perlu diselaraskan ketika revisi dokumen dilakukan. File laporan belum diubah pada tahap setup ini.
+
+## Modul Kopitera
+
+Modul `kopitera_master` versi `17.0.1.1.0` menyediakan pengajuan resep, menu, dan bahan baku melalui pemeriksaan, persetujuan, serta rilis manual. Tersedia pembatasan peran/divisi, pengarsipan versi resep, snapshot perubahan menu/bahan, dan validasi penonaktifan bahan yang masih dipakai.
+
+Validasi: 25 pemeriksaan alur resep dan 41 pemeriksaan data master/tampilan berhasil. Fitur yang belum selesai dicatat pada pemetaan layar; modul ini belum memenuhi seluruh 13 use case.
+
+- [Instalasi dan contoh resep](docs/COBA-KOPITERA.md)
+- [Pengajuan menu dan bahan](docs/COBA-MENU-DAN-BAHAN.md)
+- [Pemetaan layar Milestone 4](docs/PEMETAAN-LAYAR-M4.md)
+
+Script setup membuat akun uji beserta password acak pada setiap instalasi lokal. Password disimpan hanya di `AKUN-UJI-LOKAL.txt`. Database, akun, dan status contoh dari laptop pengembang tidak disertakan dalam repository.

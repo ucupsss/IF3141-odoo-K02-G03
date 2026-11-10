@@ -37,3 +37,7 @@ dump/*
 
 # Kredensial instalasi lokal
 AKSES-LOKAL.txt
+AKUN-UJI-LOKAL.txt
+
+# Catatan konteks chat disimpan hanya di laptop
+/KONTEKS-PENGERJAAN.md

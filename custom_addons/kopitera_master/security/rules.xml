@@ -1,0 +1,28 @@
+<?xml version='1.0' encoding='utf-8'?>
+<odoo>
+  <record id="rule_menu" model="ir.rule">
+    <field name="name">Kopitera: batas divisi dan status menu</field>
+    <field name="model_id" ref="model_kopitera_menu" />
+    <field name="domain_force">([] if user.has_group('kopitera_master.group_view_all') else [('division', 'in', (['bar'] if user.has_group('kopitera_master.group_bar') else []) + (['kitchen'] if user.has_group('kopitera_master.group_kitchen') else []))]) + ([] if user.has_group('kopitera_master.group_editor') else [('current_recipe_id', '!=', False), ('active', '=', True)])</field>
+  </record>
+  <record id="rule_ingredient" model="ir.rule">
+    <field name="name">Kopitera: batas divisi dan status ingredient</field>
+    <field name="model_id" ref="model_kopitera_ingredient" />
+    <field name="domain_force">([] if user.has_group('kopitera_master.group_view_all') else [('division', 'in', (['bar'] if user.has_group('kopitera_master.group_bar') else []) + (['kitchen'] if user.has_group('kopitera_master.group_kitchen') else []) + ['shared'])]) + []</field>
+  </record>
+  <record id="rule_recipe" model="ir.rule">
+    <field name="name">Kopitera: batas divisi dan status recipe</field>
+    <field name="model_id" ref="model_kopitera_recipe" />
+    <field name="domain_force">([] if user.has_group('kopitera_master.group_view_all') else [('division', 'in', (['bar'] if user.has_group('kopitera_master.group_bar') else []) + (['kitchen'] if user.has_group('kopitera_master.group_kitchen') else []))]) + ([] if user.has_group('kopitera_master.group_editor') else [('state', '=', 'published'), ('menu_id.active', '=', True)])</field>
+  </record>
+  <record id="rule_recipe_line" model="ir.rule">
+    <field name="name">Kopitera: batas divisi dan status recipe_line</field>
+    <field name="model_id" ref="model_kopitera_recipe_line" />
+    <field name="domain_force">([] if user.has_group('kopitera_master.group_view_all') else [('recipe_id.division', 'in', (['bar'] if user.has_group('kopitera_master.group_bar') else []) + (['kitchen'] if user.has_group('kopitera_master.group_kitchen') else []))]) + ([] if user.has_group('kopitera_master.group_editor') else [('recipe_id.state', '=', 'published'), ('recipe_id.menu_id.active', '=', True)])</field>
+  </record>
+  <record id="rule_master_change" model="ir.rule">
+    <field name="name">Kopitera: pengajuan master sesuai divisi</field>
+    <field name="model_id" ref="model_kopitera_master_change" />
+    <field name="domain_force">([] if user.has_group('kopitera_master.group_view_all') else [('division', 'in', (['bar'] if user.has_group('kopitera_master.group_bar') else []) + (['kitchen'] if user.has_group('kopitera_master.group_kitchen') else []))])</field>
+  </record>
+</odoo>

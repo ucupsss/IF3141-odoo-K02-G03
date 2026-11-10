@@ -1,0 +1,11 @@
+<odoo>
+  <record id="category_kopitera" model="ir.module.category"><field name="name">Kopitera</field><field name="sequence">20</field></record>
+<record id="group_user" model="res.groups"><field name="name">Akses Kopitera</field><field name="category_id" ref="category_kopitera"/><field name="implied_ids" eval="[(4, ref('base.group_user'))]"/></record>
+<record id="group_editor" model="res.groups"><field name="name">Pengaju / Pemeriksa</field><field name="category_id" ref="category_kopitera"/><field name="implied_ids" eval="[(4, ref('kopitera_master.group_user'))]"/></record>
+<record id="group_bar" model="res.groups"><field name="name">Staf Bar</field><field name="category_id" ref="category_kopitera"/><field name="implied_ids" eval="[(4, ref('kopitera_master.group_user'))]"/></record>
+<record id="group_kitchen" model="res.groups"><field name="name">Staf Kitchen</field><field name="category_id" ref="category_kopitera"/><field name="implied_ids" eval="[(4, ref('kopitera_master.group_user'))]"/></record>
+<record id="group_head_bar" model="res.groups"><field name="name">Head Bar</field><field name="category_id" ref="category_kopitera"/><field name="implied_ids" eval="[(4, ref('kopitera_master.group_editor')), (4, ref('kopitera_master.group_bar'))]"/></record>
+<record id="group_head_kitchen" model="res.groups"><field name="name">Head Kitchen</field><field name="category_id" ref="category_kopitera"/><field name="implied_ids" eval="[(4, ref('kopitera_master.group_editor')), (4, ref('kopitera_master.group_kitchen'))]"/></record>
+<record id="group_view_all" model="res.groups"><field name="name">Manager on Duty / Head Floor</field><field name="category_id" ref="category_kopitera"/><field name="implied_ids" eval="[(4, ref('kopitera_master.group_user'))]"/></record>
+<record id="group_manager" model="res.groups"><field name="name">Manager Area</field><field name="category_id" ref="category_kopitera"/><field name="implied_ids" eval="[(4, ref('kopitera_master.group_editor')), (4, ref('kopitera_master.group_view_all'))]"/><field name="users" eval="[(4, ref('base.user_admin'))]"/></record>
+</odoo>

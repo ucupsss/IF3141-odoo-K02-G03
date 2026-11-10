@@ -1,0 +1,59 @@
+<odoo>
+  <record id="menu_tree" model="ir.ui.view"><field name="name">kopitera.menu.tree</field><field name="model">kopitera.menu</field><field name="arch" type="xml">
+    <tree string="Katalog Menu" create="0" edit="0" delete="0"><field name="name"/><field name="division"/><field name="allergens"/><field name="current_recipe_id"/></tree>
+  </field></record>
+  <record id="menu_form" model="ir.ui.view"><field name="name">kopitera.menu.form</field><field name="model">kopitera.menu</field><field name="arch" type="xml">
+    <form string="Menu Kopitera" create="0" edit="0" delete="0">
+      <header><button name="action_propose_recipe" type="object" string="Ajukan Resep / Perubahan" class="oe_highlight" groups="kopitera_master.group_editor"/></header>
+      <sheet><div class="oe_title"><h1><field name="name"/></h1></div><group><group><field name="division"/><field name="allergens"/></group><group><field name="current_recipe_id" options="{'no_create': True}"/></group></group><field name="description"/><div class="alert alert-info" role="alert">Buka Resep Berlaku untuk melihat komposisi dan gramasi terbaru. Resep berubah setelah Manager Area menjalankan rilis.</div></sheet>
+    </form>
+  </field></record>
+  <record id="ingredient_tree" model="ir.ui.view"><field name="name">kopitera.ingredient.tree</field><field name="model">kopitera.ingredient</field><field name="arch" type="xml">
+    <tree create="0" edit="0" delete="0"><field name="name"/><field name="division"/><field name="unit"/></tree>
+  </field></record>
+  <record id="ingredient_form" model="ir.ui.view"><field name="name">kopitera.ingredient.form</field><field name="model">kopitera.ingredient</field><field name="arch" type="xml">
+    <form create="0" edit="0" delete="0"><sheet><group><field name="name"/><field name="division"/><field name="unit"/></group></sheet></form>
+  </field></record>
+  <record id="recipe_search" model="ir.ui.view"><field name="name">kopitera.recipe.search</field><field name="model">kopitera.recipe</field><field name="arch" type="xml">
+    <search><field name="name"/><field name="menu_id"/><field name="author_id"/><filter name="mine" string="Pengajuan Saya" domain="[('author_id','=',uid)]"/><separator/><filter name="review" string="Perlu Pemeriksaan" domain="[('state','=','review')]"/><filter name="approval" string="Perlu Persetujuan" domain="[('state','=','approval')]"/><filter name="release" string="Menunggu Rilis" domain="[('state','=','approved')]"/><filter name="published" string="Berlaku" domain="[('state','=','published')]"/><group expand="0" string="Kelompokkan"><filter name="by_status" string="Status" context="{'group_by':'state'}"/><filter name="by_menu" string="Menu" context="{'group_by':'menu_id'}"/></group></search>
+  </field></record>
+  <record id="recipe_tree" model="ir.ui.view"><field name="name">kopitera.recipe.tree</field><field name="model">kopitera.recipe</field><field name="arch" type="xml">
+    <tree decoration-success="state == 'published'" decoration-muted="state == 'archived'" decoration-danger="state == 'rejected'" decoration-warning="state == 'revision'"><field name="name"/><field name="menu_id"/><field name="author_id"/><field name="release_date"/><field name="version"/><field name="state" widget="badge"/></tree>
+  </field></record>
+  <record id="recipe_form" model="ir.ui.view"><field name="name">kopitera.recipe.form</field><field name="model">kopitera.recipe</field><field name="arch" type="xml">
+    <form string="Pengajuan Resep">
+      <header>
+        <button name="action_submit" type="object" string="Kirim untuk Diperiksa" class="oe_highlight" groups="kopitera_master.group_editor" invisible="state not in ['draft','revision'] or not is_author"/>
+        <button name="action_review" type="object" string="Sesuai — Teruskan" class="oe_highlight" groups="kopitera_master.group_editor" invisible="state != 'review' or is_author"/>
+        <button name="action_return" type="object" string="Minta Perbaikan" groups="kopitera_master.group_editor" invisible="state != 'review' or is_author"/>
+        <button name="action_approve" type="object" string="Setujui" class="oe_highlight" groups="kopitera_master.group_manager" invisible="state != 'approval'"/>
+        <button name="action_reject" type="object" string="Tolak" groups="kopitera_master.group_manager" invisible="state != 'approval'"/>
+        <button name="action_release" type="object" string="Rilis ke Seluruh Cabang" class="oe_highlight" groups="kopitera_master.group_manager" invisible="state != 'approved'" confirm="Jadikan resep ini berlaku di seluruh cabang dan arsipkan versi sebelumnya?"/>
+        <field name="state" widget="statusbar" statusbar_visible="draft,review,approval,approved,published"/>
+      </header>
+      <sheet>
+        <field name="is_author" invisible="1"/>
+        <div class="oe_title"><h1><field name="name"/></h1></div>
+        <div class="alert alert-success" role="alert" invisible="state != 'published'">Resep ini sedang berlaku. Perubahan berikutnya harus diajukan sebagai draf baru.</div>
+        <div class="alert alert-warning" role="alert" invisible="state != 'approved'">Sudah disetujui, tetapi belum berlaku. Manager Area menjalankan rilis pada atau setelah tanggal rilis.</div>
+        <group><group><field name="menu_id" readonly="state not in ['draft','revision'] or not is_author" options="{'no_create': True}"/><field name="division"/><field name="author_id"/><field name="version" invisible="not version"/></group><group><field name="reviewer_id"/><field name="approver_id"/><field name="release_date" readonly="state != 'approval'" groups="kopitera_master.group_manager"/><field name="release_date" readonly="1" groups="!kopitera_master.group_manager"/><field name="released_at" invisible="not released_at"/></group></group>
+        <notebook>
+          <page string="Komposisi dan Gramasi"><field name="line_ids" readonly="state not in ['draft','revision'] or not is_author"><tree editable="bottom"><field name="ingredient_id" options="{'no_create': True}"/><field name="quantity"/><field name="unit"/></tree></field><group><field name="instructions" placeholder="Tuliskan langkah penyiapan per porsi..." readonly="state not in ['draft','revision'] or not is_author"/></group></page>
+          <page string="Pengajuan dan Pemeriksaan" groups="kopitera_master.group_editor"><group><field name="reason" readonly="state not in ['draft','revision'] or not is_author"/><field name="review_note" readonly="state != 'review' or is_author"/><field name="decision_note" readonly="state != 'approval'" groups="kopitera_master.group_manager"/><field name="decision_note" readonly="1" groups="!kopitera_master.group_manager"/></group></page>
+        </notebook>
+      </sheet>
+      <div class="oe_chatter" groups="kopitera_master.group_editor"><field name="message_follower_ids"/><field name="activity_ids"/><field name="message_ids"/></div>
+    </form>
+  </field></record>
+  <record id="action_menu" model="ir.actions.act_window"><field name="name">Katalog Menu</field><field name="res_model">kopitera.menu</field><field name="view_mode">tree,form</field></record>
+  <record id="action_ingredient" model="ir.actions.act_window"><field name="name">Bahan Baku</field><field name="res_model">kopitera.ingredient</field><field name="view_mode">tree,form</field></record>
+  <record id="action_recipe" model="ir.actions.act_window"><field name="name">Pengajuan Resep</field><field name="res_model">kopitera.recipe</field><field name="view_mode">tree,form</field></record>
+  <record id="action_current" model="ir.actions.act_window"><field name="name">Resep Berlaku</field><field name="res_model">kopitera.recipe</field><field name="view_mode">tree,form</field><field name="domain">[('state','=','published')]</field><field name="context">{'create': False}</field></record>
+  <record id="action_history" model="ir.actions.act_window"><field name="name">Riwayat Versi</field><field name="res_model">kopitera.recipe</field><field name="view_mode">tree,form</field><field name="domain">[('state','in',['published','archived'])]</field><field name="context">{'create': False}</field></record>
+  <menuitem id="root_menu" name="Kopitera" sequence="5" groups="kopitera_master.group_user" web_icon="kopitera_master,static/description/icon.svg"/>
+  <menuitem id="menu_catalog" name="Katalog Menu" parent="root_menu" action="action_menu" sequence="10"/>
+  <menuitem id="menu_current" name="Resep Berlaku" parent="root_menu" action="action_current" sequence="20"/>
+  <menuitem id="menu_proposals" name="Pengajuan Resep" parent="root_menu" action="action_recipe" sequence="30" groups="kopitera_master.group_editor"/>
+  <menuitem id="menu_ingredients" name="Bahan Baku" parent="root_menu" action="action_ingredient" sequence="40" groups="kopitera_master.group_editor"/>
+  <menuitem id="menu_history" name="Riwayat Versi" parent="root_menu" action="action_history" sequence="50" groups="kopitera_master.group_editor"/>
+</odoo>
