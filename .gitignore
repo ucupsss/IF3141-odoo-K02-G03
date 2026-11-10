@@ -34,3 +34,6 @@ dump/*
 
 # Logs
 *.log
+
+# Kredensial instalasi lokal
+AKSES-LOKAL.txt
