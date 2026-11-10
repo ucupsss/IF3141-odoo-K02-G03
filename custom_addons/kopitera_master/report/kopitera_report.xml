@@ -1,0 +1,70 @@
+<?xml version='1.0' encoding='utf-8'?>
+<odoo>
+  <record id="paperformat_kopitera" model="report.paperformat">
+    <field name="name">Kopitera A4 Landscape</field>
+    <field name="format">A4</field>
+    <field name="orientation">Landscape</field>
+    <field name="margin_top">25</field>
+    <field name="margin_bottom">15</field>
+    <field name="margin_left">10</field>
+    <field name="margin_right">10</field>
+    <field name="header_spacing">20</field>
+    <field name="dpi">90</field>
+  </record>
+  <record id="action_report_kopitera" model="ir.actions.report">
+    <field name="name">Laporan Kopitera</field>
+    <field name="model">kopitera.report.wizard</field>
+    <field name="report_type">qweb-pdf</field>
+    <field name="report_name">kopitera_master.report_kopitera_document</field>
+    <field name="report_file">kopitera_master.report_kopitera_document</field>
+    <field name="print_report_name">'kopitera-%s' % object.report_type</field>
+    <field name="paperformat_id" ref="paperformat_kopitera"/>
+    <field name="binding_type">report</field>
+  </record>
+  <template id="report_kopitera_document">
+    <t t-call="web.html_container">
+      <t t-foreach="docs" t-as="wizard">
+        <t t-set="data" t-value="wizard._report_context()"/>
+        <t t-call="web.external_layout">
+          <div class="page">
+            <h3 t-out="'Kopitera — ' + data['title']"/>
+            <p class="text-muted small"><span t-out="data['filters']"/><br/>
+              Dibuat oleh <span t-out="data['printed_by']"/> pada <span t-out="data['printed_at']"/></p>
+            <t t-if="wizard.report_type == 'recipe'">
+              <t t-if="not data['recipes']"><p>Tidak ada resep berlaku sesuai filter.</p></t>
+              <t t-foreach="data['recipes']" t-as="recipe">
+                <div style="page-break-inside: avoid;" class="mb-4">
+                  <h4 t-out="recipe.menu_id.name"/>
+                  <p class="small">Versi <span t-out="recipe.version"/> · Nomor <span t-out="recipe.name"/> ·
+                    Berlaku sejak <span t-out="recipe.released_at" t-options="{'widget': 'date'}"/> ·
+                    Alergen: <span t-out="recipe.menu_id.allergens or '-'"/></p>
+                  <table class="table table-sm table-bordered">
+                    <thead><tr><th>Bahan Baku</th><th class="text-end">Takaran per Porsi</th><th>Satuan</th></tr></thead>
+                    <tbody>
+                      <tr t-foreach="recipe.line_ids" t-as="line">
+                        <td t-out="line.ingredient_id.name"/>
+                        <td class="text-end" t-out="('%.3f' % line.quantity).rstrip('0').rstrip('.')"/>
+                        <td t-out="{'g': 'g', 'ml': 'ml', 'pcs': 'buah'}.get(line.unit, line.unit)"/>
+                      </tr>
+                    </tbody>
+                  </table>
+                  <p class="small"><b>Langkah penyiapan</b></p>
+                  <p class="small" style="white-space: pre-line;" t-out="recipe.instructions"/>
+                </div>
+              </t>
+            </t>
+            <t t-else="">
+              <table class="table table-sm table-bordered">
+                <thead><tr><th t-foreach="data['header']" t-as="h" t-out="h"/></tr></thead>
+                <tbody>
+                  <tr t-foreach="data['rows']" t-as="row"><td t-foreach="row" t-as="cell" t-out="cell"/></tr>
+                  <tr t-if="not data['rows']"><td t-att-colspan="len(data['header'])">Tidak ada data sesuai filter.</td></tr>
+                </tbody>
+              </table>
+            </t>
+          </div>
+        </t>
+      </t>
+    </t>
+  </template>
+</odoo>

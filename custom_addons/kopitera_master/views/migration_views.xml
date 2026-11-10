@@ -1,0 +1,79 @@
+<?xml version='1.0' encoding='utf-8'?>
+<odoo>
+  <record id="import_wizard_form" model="ir.ui.view">
+    <field name="name">kopitera.import.wizard.form</field>
+    <field name="model">kopitera.import.wizard</field>
+    <field name="arch" type="xml">
+      <form string="Migrasi Data Awal dari Excel">
+        <field name="state" invisible="1"/>
+        <div invisible="state != 'upload'">
+          <p>Unggah berkas .xlsx hasil pembersihan data dengan lembar <b>Menu</b>, <b>Bahan</b>, <b>Resep</b>, dan opsional <b>Akun</b>.
+             Resep yang berhasil diimpor langsung menjadi versi 1 yang berlaku.</p>
+          <group>
+            <field name="file_data" filename="file_name" required="state == 'upload'"/>
+            <field name="file_name" invisible="1"/>
+          </group>
+        </div>
+        <div invisible="state != 'preview'">
+          <div class="alert alert-warning" role="alert">Pratinjau. Belum ada data yang disimpan. Baris gagal tidak akan diimpor.</div>
+          <group><group><field name="valid_count"/></group><group><field name="invalid_count"/></group></group>
+        </div>
+        <div invisible="state != 'done'">
+          <div class="alert alert-success" role="alert">Migrasi selesai. Hasil tersimpan pada Log Migrasi.</div>
+          <group><group><field name="log_id"/><field name="valid_count" string="Jumlah Berhasil"/></group>
+                 <group><field name="invalid_count" string="Jumlah Gagal"/></group></group>
+        </div>
+        <field name="preview_html" nolabel="1" invisible="state == 'upload'"/>
+        <footer>
+          <button name="action_preview" type="object" string="Periksa Berkas" class="btn-primary" invisible="state != 'upload'"/>
+          <button name="action_download_template" type="object" string="Unduh Template" class="btn-secondary" invisible="state != 'upload'"/>
+          <button name="action_import" type="object" string="Impor Data Valid" class="btn-primary" invisible="state != 'preview'"
+                  confirm="Impor seluruh baris valid ke sistem?"/>
+          <button name="action_back" type="object" string="Kembali" class="btn-secondary" invisible="state != 'preview'"/>
+          <button string="Tutup" class="btn-secondary" special="cancel"/>
+        </footer>
+      </form>
+    </field>
+  </record>
+  <record id="action_import_wizard" model="ir.actions.act_window">
+    <field name="name">Migrasi Data Awal</field>
+    <field name="res_model">kopitera.import.wizard</field>
+    <field name="view_mode">form</field>
+    <field name="target">new</field>
+  </record>
+  <record id="migration_log_tree" model="ir.ui.view">
+    <field name="name">kopitera.migration.log.tree</field>
+    <field name="model">kopitera.migration.log</field>
+    <field name="arch" type="xml">
+      <tree create="0" edit="0" delete="0">
+        <field name="name"/>
+        <field name="file_name"/>
+        <field name="import_time"/>
+        <field name="user_id"/>
+        <field name="success_count"/>
+        <field name="failed_count"/>
+      </tree>
+    </field>
+  </record>
+  <record id="migration_log_form" model="ir.ui.view">
+    <field name="name">kopitera.migration.log.form</field>
+    <field name="model">kopitera.migration.log</field>
+    <field name="arch" type="xml">
+      <form create="0" edit="0" delete="0">
+        <sheet>
+          <div class="oe_title"><h1><field name="name"/></h1></div>
+          <group>
+            <group><field name="file_name"/><field name="import_time"/><field name="user_id"/></group>
+            <group><field name="success_count"/><field name="failed_count"/></group>
+          </group>
+          <group><field name="summary"/><field name="notes"/></group>
+        </sheet>
+      </form>
+    </field>
+  </record>
+  <record id="action_migration_log" model="ir.actions.act_window">
+    <field name="name">Log Migrasi</field>
+    <field name="res_model">kopitera.migration.log</field>
+    <field name="view_mode">tree,form</field>
+  </record>
+</odoo>

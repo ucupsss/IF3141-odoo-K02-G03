@@ -1,0 +1,17 @@
+<?xml version='1.0' encoding='utf-8'?>
+<odoo noupdate="1">
+  <!-- Odoo 17 tidak menyediakan satuan mililiter; dibutuhkan untuk BoM bahan cair. -->
+  <record id="uom_ml" model="uom.uom">
+    <field name="name">ml</field>
+    <field name="category_id" ref="uom.product_uom_categ_vol"/>
+    <field name="uom_type">smaller</field>
+    <field name="factor">1000</field>
+    <field name="rounding">0.01</field>
+  </record>
+  <record id="sequence_migration_log" model="ir.sequence">
+    <field name="name">Log Migrasi Kopitera</field>
+    <field name="code">kopitera.migration.log</field>
+    <field name="prefix">MIG/</field>
+    <field name="padding">4</field>
+  </record>
+</odoo>

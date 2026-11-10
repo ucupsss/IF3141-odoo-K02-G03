@@ -217,7 +217,7 @@ class KopiteraRecipeLine(models.Model):
 
     recipe_id = fields.Many2one('kopitera.recipe', required=True, ondelete='cascade')
     ingredient_id = fields.Many2one('kopitera.ingredient', 'Bahan Baku', required=True, ondelete='restrict')
-    quantity = fields.Float('Gramasi / Takaran', required=True, digits=(12, 3))
+    quantity = fields.Float('Gramasi / Takaran', required=True, digits=(12, 1))
     unit = fields.Selection(related='ingredient_id.unit', string='Satuan Baku')
 
     _sql_constraints = [

@@ -77,8 +77,6 @@
   </record>
   <record id="action_change_menu" model="ir.actions.act_window"><field name="name">Pengajuan Menu</field><field name="res_model">kopitera.master.change</field><field name="view_mode">tree,form</field><field name="domain">[('kind','=','menu')]</field><field name="context">{'default_kind':'menu'}</field></record>
   <record id="action_change_ingredient" model="ir.actions.act_window"><field name="name">Pengajuan Bahan Baku</field><field name="res_model">kopitera.master.change</field><field name="view_mode">tree,form</field><field name="domain">[('kind','=','ingredient')]</field><field name="context">{'default_kind':'ingredient'}</field></record>
-  <menuitem id="menu_change_menu" name="Pengajuan Menu" parent="root_menu" action="action_change_menu" sequence="31" groups="kopitera_master.group_editor"/>
-  <menuitem id="menu_change_ingredient" name="Pengajuan Bahan" parent="root_menu" action="action_change_ingredient" sequence="32" groups="kopitera_master.group_editor"/>
   <record id="menu_form_lifecycle" model="ir.ui.view"><field name="name">kopitera.menu.form.lifecycle</field><field name="model">kopitera.menu</field><field name="inherit_id" ref="menu_form"/>
     <field name="arch" type="xml">
       <xpath expr="//header" position="inside"><button name="action_propose_change" type="object" string="Ajukan Ubah / Nonaktifkan Menu" groups="kopitera_master.group_editor" invisible="not active"/></xpath>

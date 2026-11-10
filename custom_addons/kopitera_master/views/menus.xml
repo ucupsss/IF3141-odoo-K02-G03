@@ -1,0 +1,31 @@
+<?xml version='1.0' encoding='utf-8'?>
+<odoo>
+  <menuitem id="root_menu" name="Kopitera" sequence="5" groups="kopitera_master.group_user" web_icon="kopitera_master,static/description/icon.svg"/>
+
+  <menuitem id="menu_group_master" name="Data Induk" parent="root_menu" sequence="10"/>
+  <menuitem id="menu_catalog" name="Katalog Menu" parent="menu_group_master" action="action_menu" sequence="10"/>
+  <menuitem id="menu_current" name="Resep Berlaku" parent="menu_group_master" action="action_current" sequence="20"/>
+  <menuitem id="menu_ingredients" name="Bahan Baku" parent="menu_group_master" action="action_ingredient" sequence="30" groups="kopitera_master.group_editor"/>
+
+  <menuitem id="menu_group_proposal" name="Pengajuan" parent="root_menu" sequence="20" groups="kopitera_master.group_editor"/>
+  <menuitem id="menu_proposals" name="Pengajuan Resep" parent="menu_group_proposal" action="action_recipe" sequence="10"/>
+  <menuitem id="menu_change_menu" name="Pengajuan Menu" parent="menu_group_proposal" action="action_change_menu" sequence="20"/>
+  <menuitem id="menu_change_ingredient" name="Pengajuan Bahan" parent="menu_group_proposal" action="action_change_ingredient" sequence="30"/>
+
+  <menuitem id="menu_group_history" name="Riwayat" parent="root_menu" sequence="30" groups="kopitera_master.group_editor"/>
+  <menuitem id="menu_history" name="Riwayat Versi Resep" parent="menu_group_history" action="action_history" sequence="10"/>
+  <menuitem id="menu_audit" name="Log Audit" parent="menu_group_history" action="action_audit_log" sequence="20"/>
+
+  <menuitem id="menu_report" name="Laporan" parent="root_menu" action="action_report_wizard" sequence="40"
+            groups="kopitera_master.group_editor,kopitera_master.group_head_floor"/>
+  <menuitem id="menu_notification" name="Notifikasi" parent="root_menu" action="action_notification" sequence="50"
+            groups="kopitera_master.group_editor,kopitera_master.group_head_floor"/>
+
+  <menuitem id="menu_group_admin" name="Administrasi" parent="root_menu" sequence="60"
+            groups="kopitera_master.group_manager,kopitera_master.group_developer,base.group_system"/>
+  <menuitem id="menu_account" name="Akun Pengguna" parent="menu_group_admin" action="action_account" sequence="10" groups="kopitera_master.group_manager"/>
+  <menuitem id="menu_import" name="Migrasi Data Awal" parent="menu_group_admin" action="action_import_wizard" sequence="20"
+            groups="kopitera_master.group_developer,base.group_system"/>
+  <menuitem id="menu_migration_log" name="Log Migrasi" parent="menu_group_admin" action="action_migration_log" sequence="30"
+            groups="kopitera_master.group_developer,base.group_system"/>
+</odoo>

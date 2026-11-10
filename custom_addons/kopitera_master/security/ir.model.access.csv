@@ -8,3 +8,15 @@ access_recipe_edit,recipe edit,model_kopitera_recipe,group_editor,1,1,1,1
 access_recipe_line_read,recipe_line read,model_kopitera_recipe_line,group_user,1,0,0,0
 access_recipe_line_edit,recipe_line edit,model_kopitera_recipe_line,group_editor,1,1,1,1
 access_master_change_editor,master change editor,model_kopitera_master_change,group_editor,1,1,1,1
+access_audit_log_editor,audit log editor,model_kopitera_audit_log,group_editor,1,0,0,0
+access_audit_log_floor,audit log head floor,model_kopitera_audit_log,group_head_floor,1,0,0,0
+access_notification_user,notification user,model_kopitera_notification,group_user,1,1,0,0
+access_restore_wizard_manager,restore wizard,model_kopitera_restore_wizard,group_manager,1,1,1,1
+access_account_manager,account manager,model_kopitera_account,group_manager,1,1,1,0
+access_report_wizard_editor,report wizard editor,model_kopitera_report_wizard,group_editor,1,1,1,1
+access_report_wizard_floor,report wizard head floor,model_kopitera_report_wizard,group_head_floor,1,1,1,1
+access_migration_log_dev,migration log developer,model_kopitera_migration_log,group_developer,1,0,0,0
+access_migration_log_system,migration log system,model_kopitera_migration_log,base.group_system,1,0,0,0
+access_import_wizard_dev,import wizard developer,model_kopitera_import_wizard,group_developer,1,1,1,1
+access_import_wizard_system,import wizard system,model_kopitera_import_wizard,base.group_system,1,1,1,1
+access_master_change_floor,master change head floor,model_kopitera_master_change,group_head_floor,1,0,0,0

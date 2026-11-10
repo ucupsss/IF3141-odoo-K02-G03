@@ -47,8 +47,12 @@ role_specs = [
     ('stafbar', 'Staf Bar', 'group_bar'),
     ('stafkitchen', 'Staf Kitchen', 'group_kitchen'),
     ('mod', 'Manager on Duty', 'group_view_all'),
-    ('headfloor', 'Head Floor', 'group_view_all'),
+    ('headfloor', 'Head Floor', 'group_head_floor'),
+    ('dev', 'Pengembang Eksternal', 'group_developer'),
 ]
+branches = {'manager': 'karawitan', 'headbar': 'dago', 'reviewerbar': 'dago', 'stafbar': 'dago', 'headfloor': 'dago',
+            'headkitchen': 'karawitan', 'reviewerkitchen': 'karawitan', 'stafkitchen': 'karawitan', 'mod': 'burangrang',
+            'dev': False}
 for key, role, group in role_specs:
     login = key + '.kopitera'
     if any(a['login'] == login for a in accounts):
@@ -65,10 +69,18 @@ for key, role, group in role_specs:
     accounts.append({'peran': role, 'login': login, 'password': password, 'id': uid})
     account_file.write_text(json.dumps(accounts, indent=2, ensure_ascii=False) + '\n', encoding='utf-8')
 
+# v1.2.0: tautkan akun ke data Akun Pengguna (UC-09) dan lengkapi cabang contoh bila masih kosong.
+admin('kopitera.account', 'action_sync_users', [])
+for record in admin('kopitera.account', 'search_read', [[['branch', '=', False]]], fields=['login']):
+    branch = branches.get(record['login'].split('.')[0])
+    if branch:
+        admin('kopitera.account', 'write', [[record['id']], {'branch': branch}])
+
 sessions = {}
 for account in accounts:
     admin('res.users', 'write', [[account['id']], {'email': account['login'] + '@example.test', 'notification_type': 'inbox'}])
-    sessions[account['login'].split('.')[0]] = session(account['login'], account['password'])[1]
+    if account['login'].split('.')[0] in ('headbar', 'reviewerbar', 'headkitchen', 'reviewerkitchen', 'manager'):
+        sessions[account['login'].split('.')[0]] = session(account['login'], account['password'])[1]
 
 today = datetime.now(ZoneInfo('Asia/Jakarta')).date().isoformat()
 for area, menu_xml, composition, instructions in [
@@ -100,7 +112,8 @@ for area, menu_xml, composition, instructions in [
             state = 'approved'
         if state == 'approved':
             manager('kopitera.recipe', 'action_release', [[recipe]])
-    if not admin('kopitera.recipe', 'search_count', [[['menu_id', '=', menu_id], ['state', 'in', ['draft', 'revision', 'review', 'approval', 'approved']]]]):
+    # Draf latihan hanya dibuat sekali, saat menu baru memiliki resep awal; tidak menimpa progres pengguna.
+    if admin('kopitera.recipe', 'search_count', [[['menu_id', '=', menu_id]]]) == 1:
         action = author('kopitera.menu', 'action_propose_recipe', [[menu_id]])
         author('kopitera.recipe', 'write', [[action['res_id']], {'reason': 'Latihan pengajuan perubahan resep; silakan sesuaikan takaran sebelum dikirim.'}])
 

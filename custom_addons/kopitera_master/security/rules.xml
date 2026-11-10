@@ -25,4 +25,14 @@
     <field name="model_id" ref="model_kopitera_master_change" />
     <field name="domain_force">([] if user.has_group('kopitera_master.group_view_all') else [('division', 'in', (['bar'] if user.has_group('kopitera_master.group_bar') else []) + (['kitchen'] if user.has_group('kopitera_master.group_kitchen') else []))])</field>
   </record>
+  <record id="rule_audit_log" model="ir.rule">
+    <field name="name">Kopitera: log audit sesuai divisi</field>
+    <field name="model_id" ref="model_kopitera_audit_log" />
+    <field name="domain_force">([] if user.has_group('kopitera_master.group_view_all') else [('division', 'in', (['bar'] if user.has_group('kopitera_master.group_bar') else []) + (['kitchen'] if user.has_group('kopitera_master.group_kitchen') else []))])</field>
+  </record>
+  <record id="rule_notification_own" model="ir.rule">
+    <field name="name">Kopitera: notifikasi milik penerima</field>
+    <field name="model_id" ref="model_kopitera_notification" />
+    <field name="domain_force">[('user_id', '=', user.id)]</field>
+  </record>
 </odoo>

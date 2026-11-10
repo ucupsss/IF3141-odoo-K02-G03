@@ -18,7 +18,7 @@
     <search><field name="name"/><field name="menu_id"/><field name="author_id"/><filter name="mine" string="Pengajuan Saya" domain="[('author_id','=',uid)]"/><separator/><filter name="review" string="Perlu Pemeriksaan" domain="[('state','=','review')]"/><filter name="approval" string="Perlu Persetujuan" domain="[('state','=','approval')]"/><filter name="release" string="Menunggu Rilis" domain="[('state','=','approved')]"/><filter name="published" string="Berlaku" domain="[('state','=','published')]"/><group expand="0" string="Kelompokkan"><filter name="by_status" string="Status" context="{'group_by':'state'}"/><filter name="by_menu" string="Menu" context="{'group_by':'menu_id'}"/></group></search>
   </field></record>
   <record id="recipe_tree" model="ir.ui.view"><field name="name">kopitera.recipe.tree</field><field name="model">kopitera.recipe</field><field name="arch" type="xml">
-    <tree decoration-success="state == 'published'" decoration-muted="state == 'archived'" decoration-danger="state == 'rejected'" decoration-warning="state == 'revision'"><field name="name"/><field name="menu_id"/><field name="author_id"/><field name="release_date"/><field name="version"/><field name="state" widget="badge"/></tree>
+    <tree decoration-success="state == 'published'" decoration-muted="state == 'archived'" decoration-danger="state == 'rejected'" decoration-warning="state == 'revision'"><field name="name"/><field name="menu_id"/><field name="author_id"/><field name="release_date"/><field name="version" invisible="not version"/><field name="state" widget="badge"/></tree>
   </field></record>
   <record id="recipe_form" model="ir.ui.view"><field name="name">kopitera.recipe.form</field><field name="model">kopitera.recipe</field><field name="arch" type="xml">
     <form string="Pengajuan Resep">
@@ -50,10 +50,4 @@
   <record id="action_recipe" model="ir.actions.act_window"><field name="name">Pengajuan Resep</field><field name="res_model">kopitera.recipe</field><field name="view_mode">tree,form</field></record>
   <record id="action_current" model="ir.actions.act_window"><field name="name">Resep Berlaku</field><field name="res_model">kopitera.recipe</field><field name="view_mode">tree,form</field><field name="domain">[('state','=','published')]</field><field name="context">{'create': False}</field></record>
   <record id="action_history" model="ir.actions.act_window"><field name="name">Riwayat Versi</field><field name="res_model">kopitera.recipe</field><field name="view_mode">tree,form</field><field name="domain">[('state','in',['published','archived'])]</field><field name="context">{'create': False}</field></record>
-  <menuitem id="root_menu" name="Kopitera" sequence="5" groups="kopitera_master.group_user" web_icon="kopitera_master,static/description/icon.svg"/>
-  <menuitem id="menu_catalog" name="Katalog Menu" parent="root_menu" action="action_menu" sequence="10"/>
-  <menuitem id="menu_current" name="Resep Berlaku" parent="root_menu" action="action_current" sequence="20"/>
-  <menuitem id="menu_proposals" name="Pengajuan Resep" parent="root_menu" action="action_recipe" sequence="30" groups="kopitera_master.group_editor"/>
-  <menuitem id="menu_ingredients" name="Bahan Baku" parent="root_menu" action="action_ingredient" sequence="40" groups="kopitera_master.group_editor"/>
-  <menuitem id="menu_history" name="Riwayat Versi" parent="root_menu" action="action_history" sequence="50" groups="kopitera_master.group_editor"/>
 </odoo>

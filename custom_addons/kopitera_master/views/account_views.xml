@@ -1,0 +1,73 @@
+<?xml version='1.0' encoding='utf-8'?>
+<odoo>
+  <record id="account_tree" model="ir.ui.view">
+    <field name="name">kopitera.account.tree</field>
+    <field name="model">kopitera.account</field>
+    <field name="arch" type="xml">
+      <tree decoration-muted="state == 'inactive'">
+        <field name="name"/>
+        <field name="login"/>
+        <field name="job_title"/>
+        <field name="role"/>
+        <field name="branch"/>
+        <field name="state" widget="badge" decoration-success="state == 'active'" decoration-danger="state == 'inactive'"/>
+      </tree>
+    </field>
+  </record>
+  <record id="account_form" model="ir.ui.view">
+    <field name="name">kopitera.account.form</field>
+    <field name="model">kopitera.account</field>
+    <field name="arch" type="xml">
+      <form string="Akun Pengguna">
+        <header>
+          <button name="action_deactivate" type="object" string="Nonaktifkan Akun" invisible="state != 'active' or not id"
+                  confirm="Nonaktifkan akun ini? Pengguna tidak dapat masuk, tetapi riwayat aktivitasnya tetap tersimpan."/>
+          <button name="action_activate" type="object" string="Aktifkan Kembali" class="oe_highlight" invisible="state != 'inactive'"/>
+          <field name="state" widget="statusbar"/>
+        </header>
+        <sheet>
+          <div class="oe_title"><label for="name"/><h1><field name="name" placeholder="Nama lengkap"/></h1></div>
+          <group>
+            <group string="Identitas">
+              <field name="login" placeholder="contoh: stafbar2.kopitera"/>
+              <field name="job_title"/>
+              <field name="branch"/>
+              <field name="user_id" invisible="not user_id"/>
+            </group>
+            <group string="Hak Akses">
+              <field name="role"/>
+              <field name="rights" readonly="1"/>
+              <field name="new_password" password="True" required="not id" placeholder="minimal 8 karakter"/>
+            </group>
+          </group>
+          <div class="alert alert-info" role="alert">
+            Peran menentukan hak akses data menu, resep, dan gramasi. Akun tidak dihapus; gunakan Nonaktifkan untuk karyawan yang keluar atau berpindah jabatan.
+            Password hanya diisi saat membuat akun atau mengatur ulang password.
+          </div>
+        </sheet>
+        <div class="oe_chatter"><field name="message_ids"/></div>
+      </form>
+    </field>
+  </record>
+  <record id="account_search" model="ir.ui.view">
+    <field name="name">kopitera.account.search</field>
+    <field name="model">kopitera.account</field>
+    <field name="arch" type="xml">
+      <search>
+        <field name="name"/>
+        <field name="login"/>
+        <filter name="active" string="Aktif" domain="[('state','=','active')]"/>
+        <filter name="inactive" string="Nonaktif" domain="[('state','=','inactive')]"/>
+        <group expand="0" string="Kelompokkan">
+          <filter name="by_role" string="Peran" context="{'group_by':'role'}"/>
+          <filter name="by_branch" string="Cabang" context="{'group_by':'branch'}"/>
+        </group>
+      </search>
+    </field>
+  </record>
+  <record id="action_account" model="ir.actions.act_window">
+    <field name="name">Akun Pengguna</field>
+    <field name="res_model">kopitera.account</field>
+    <field name="view_mode">tree,form</field>
+  </record>
+</odoo>

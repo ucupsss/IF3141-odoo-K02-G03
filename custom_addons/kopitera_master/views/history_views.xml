@@ -1,0 +1,229 @@
+<?xml version='1.0' encoding='utf-8'?>
+<odoo>
+  <!-- Resep: perbandingan gramasi, relasi versi, log audit, pemulihan (UC-04, UC-07, UC-08) -->
+  <record id="recipe_form_history" model="ir.ui.view">
+    <field name="name">kopitera.recipe.form.history</field>
+    <field name="model">kopitera.recipe</field>
+    <field name="inherit_id" ref="recipe_form_lifecycle"/>
+    <field name="arch" type="xml">
+      <xpath expr="//button[@name='action_request_update']" position="after">
+        <button name="action_open_restore" type="object" string="Pulihkan Versi Ini" class="oe_highlight"
+                groups="kopitera_master.group_manager" invisible="state != 'archived'"/>
+      </xpath>
+      <xpath expr="//field[@name='version']" position="after">
+        <field name="previous_recipe_id" invisible="not previous_recipe_id" groups="kopitera_master.group_editor"/>
+        <field name="restored_from_id" invisible="not restored_from_id"/>
+        <field name="bom_id" invisible="not bom_id" groups="base.group_system"/>
+      </xpath>
+      <xpath expr="//div[hasclass('oe_title')]" position="after">
+        <div class="alert alert-info" role="alert" invisible="not restored_from_id">
+          Pengajuan ini memulihkan isi versi lama. Tetap melalui pemeriksaan, persetujuan, dan rilis; hasilnya menjadi nomor versi baru.
+        </div>
+        <div class="alert alert-secondary" role="alert" invisible="state != 'archived'">
+          Versi arsip. Isi tidak dapat diubah; Manager Area dapat mengajukan pemulihan ke versi ini.
+        </div>
+      </xpath>
+      <xpath expr="//notebook/page[1]" position="after">
+        <page string="Perbandingan Gramasi" name="comparison" groups="kopitera_master.group_editor">
+          <p class="text-muted"><field name="comparison_label" readonly="1"/></p>
+          <field name="comparison_html" readonly="1" nolabel="1"/>
+        </page>
+        <page string="Log Audit" name="audit" groups="kopitera_master.group_editor">
+          <field name="audit_log_ids" readonly="1">
+            <tree>
+              <field name="timestamp"/>
+              <field name="action"/>
+              <field name="user_id"/>
+              <field name="note"/>
+            </tree>
+          </field>
+        </page>
+      </xpath>
+    </field>
+  </record>
+
+  <record id="recipe_tree_history" model="ir.ui.view">
+    <field name="name">kopitera.recipe.tree.history</field>
+    <field name="model">kopitera.recipe</field>
+    <field name="inherit_id" ref="recipe_tree"/>
+    <field name="arch" type="xml">
+      <xpath expr="//field[@name='version']" position="after">
+        <field name="released_at" optional="show"/>
+        <field name="restored_from_id" optional="hide" groups="kopitera_master.group_editor"/>
+      </xpath>
+    </field>
+  </record>
+
+  <!-- Pengajuan menu/bahan: tab log audit -->
+  <record id="change_form_history" model="ir.ui.view">
+    <field name="name">kopitera.master.change.form.history</field>
+    <field name="model">kopitera.master.change</field>
+    <field name="inherit_id" ref="change_form"/>
+    <field name="arch" type="xml">
+      <xpath expr="//notebook" position="inside">
+        <page string="Log Audit" name="audit">
+          <field name="audit_log_ids" readonly="1">
+            <tree>
+              <field name="timestamp"/>
+              <field name="action"/>
+              <field name="user_id"/>
+              <field name="note"/>
+            </tree>
+          </field>
+        </page>
+      </xpath>
+    </field>
+  </record>
+
+  <record id="restore_wizard_form" model="ir.ui.view">
+    <field name="name">kopitera.restore.wizard.form</field>
+    <field name="model">kopitera.restore.wizard</field>
+    <field name="arch" type="xml">
+      <form string="Pulihkan Versi Resep">
+        <group>
+          <group>
+            <field name="menu_id" readonly="1"/>
+            <field name="recipe_id" readonly="1"/>
+          </group>
+          <group>
+            <field name="current_version"/>
+            <field name="target_version"/>
+          </group>
+        </group>
+        <field name="reason" placeholder="Contoh: takaran versi berlaku keliru; kembalikan ke versi yang benar." required="1"/>
+        <h5 class="mt-3">Perbandingan versi berlaku dengan versi tujuan</h5>
+        <field name="preview_html" readonly="1" nolabel="1"/>
+        <div class="alert alert-info" role="alert">
+          Sistem membuat pengajuan baru dari versi tujuan lalu mengirimkannya ke Head Bar/Head Kitchen untuk diperiksa.
+          Versi berlaku tetap aktif sampai pemulihan disetujui dan dirilis.
+        </div>
+        <footer>
+          <button name="action_confirm" type="object" string="Ajukan Pemulihan" class="btn-primary"/>
+          <button string="Batal" class="btn-secondary" special="cancel"/>
+        </footer>
+      </form>
+    </field>
+  </record>
+
+  <!-- Log Audit (UC-07, FR-11) -->
+  <record id="audit_log_tree" model="ir.ui.view">
+    <field name="name">kopitera.audit.log.tree</field>
+    <field name="model">kopitera.audit.log</field>
+    <field name="arch" type="xml">
+      <tree create="0" edit="0" delete="0">
+        <field name="timestamp"/>
+        <field name="reference"/>
+        <field name="object_type"/>
+        <field name="object_name"/>
+        <field name="division" optional="show"/>
+        <field name="action" widget="badge"/>
+        <field name="user_id"/>
+        <field name="note" optional="show"/>
+      </tree>
+    </field>
+  </record>
+  <record id="audit_log_form" model="ir.ui.view">
+    <field name="name">kopitera.audit.log.form</field>
+    <field name="model">kopitera.audit.log</field>
+    <field name="arch" type="xml">
+      <form create="0" edit="0" delete="0">
+        <header>
+          <button name="action_open_source" type="object" string="Buka Pengajuan" class="oe_highlight"/>
+        </header>
+        <sheet>
+          <div class="oe_title"><h1><field name="reference"/></h1></div>
+          <group>
+            <group><field name="action"/><field name="object_type"/><field name="object_name"/></group>
+            <group><field name="timestamp"/><field name="user_id"/><field name="division"/></group>
+          </group>
+          <group><field name="note"/></group>
+          <div class="row">
+            <div class="col-6"><h5>Nilai sebelum</h5><field name="before_value" nolabel="1"/></div>
+            <div class="col-6"><h5>Nilai sesudah</h5><field name="after_value" nolabel="1"/></div>
+          </div>
+        </sheet>
+      </form>
+    </field>
+  </record>
+  <record id="audit_log_search" model="ir.ui.view">
+    <field name="name">kopitera.audit.log.search</field>
+    <field name="model">kopitera.audit.log</field>
+    <field name="arch" type="xml">
+      <search>
+        <field name="object_name"/>
+        <field name="reference"/>
+        <field name="user_id"/>
+        <filter name="recipe" string="Resep" domain="[('object_type','=','recipe')]"/>
+        <filter name="menu" string="Menu" domain="[('object_type','=','menu')]"/>
+        <filter name="ingredient" string="Bahan Baku" domain="[('object_type','=','ingredient')]"/>
+        <separator/>
+        <filter name="release" string="Rilis" domain="[('action','=','release')]"/>
+        <filter name="timestamp" string="Waktu" date="timestamp"/>
+        <group expand="0" string="Kelompokkan">
+          <filter name="by_action" string="Tindakan" context="{'group_by':'action'}"/>
+          <filter name="by_object" string="Nama Data" context="{'group_by':'object_name'}"/>
+        </group>
+      </search>
+    </field>
+  </record>
+  <record id="action_audit_log" model="ir.actions.act_window">
+    <field name="name">Log Audit</field>
+    <field name="res_model">kopitera.audit.log</field>
+    <field name="view_mode">tree,form</field>
+  </record>
+
+  <!-- Notifikasi (UC-12, FR-09) -->
+  <record id="notification_tree" model="ir.ui.view">
+    <field name="name">kopitera.notification.tree</field>
+    <field name="model">kopitera.notification</field>
+    <field name="arch" type="xml">
+      <tree create="0" edit="0" delete="0" decoration-bf="not is_read" decoration-muted="is_read">
+        <field name="create_date"/>
+        <field name="kind" widget="badge" width="150px"/>
+        <field name="name" width="260px"/>
+        <field name="message"/>
+        <field name="is_read" widget="boolean_toggle" readonly="1"/>
+        <button name="action_open" type="object" string="Buka" icon="fa-external-link"/>
+        <button name="action_mark_read" type="object" string="Tandai Dibaca" icon="fa-check" invisible="is_read"/>
+      </tree>
+    </field>
+  </record>
+  <record id="notification_form" model="ir.ui.view">
+    <field name="name">kopitera.notification.form</field>
+    <field name="model">kopitera.notification</field>
+    <field name="arch" type="xml">
+      <form create="0" edit="0" delete="0">
+        <header>
+          <button name="action_open" type="object" string="Buka Pengajuan" class="oe_highlight"/>
+          <button name="action_mark_read" type="object" string="Tandai Dibaca" invisible="is_read"/>
+        </header>
+        <sheet>
+          <div class="oe_title"><h1><field name="name"/></h1></div>
+          <group>
+            <group><field name="kind"/><field name="reference"/></group>
+            <group><field name="create_date"/><field name="is_read"/></group>
+          </group>
+          <field name="message"/>
+        </sheet>
+      </form>
+    </field>
+  </record>
+  <record id="notification_search" model="ir.ui.view">
+    <field name="name">kopitera.notification.search</field>
+    <field name="model">kopitera.notification</field>
+    <field name="arch" type="xml">
+      <search>
+        <field name="name"/>
+        <filter name="unread" string="Belum Dibaca" domain="[('is_read','=',False)]"/>
+        <filter name="read" string="Sudah Dibaca" domain="[('is_read','=',True)]"/>
+      </search>
+    </field>
+  </record>
+  <record id="action_notification" model="ir.actions.act_window">
+    <field name="name">Notifikasi</field>
+    <field name="res_model">kopitera.notification</field>
+    <field name="view_mode">tree,form</field>
+    <field name="context">{'search_default_unread': 1}</field>
+    <field name="help" type="html"><p class="o_view_nocontent_smiling_face">Tidak ada notifikasi baru</p></field>
+  </record>
+</odoo>

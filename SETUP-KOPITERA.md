@@ -19,7 +19,7 @@ Odoo hanya dibuka pada alamat lokal laptop ini (127.0.0.1). PostgreSQL tidak mem
 - Inventory (`stock`): dependensi Manufacturing; bukan perluasan lingkup tugas menjadi pengelolaan stok.
 - Starter Cats (`starter_cats`): contoh resmi tutorial untuk memeriksa pemasangan custom add-on. Ini bukan modul Kopitera dan tidak dihitung sebagai modul buatan kelompok.
 
-Modul PLM Enterprise tidak tersedia dalam Odoo Community. Alur pengajuan, pemeriksaan, persetujuan, rilis, dan versi resep Kopitera diwujudkan melalui modul kustom. Setup dasar kemudian dilanjutkan dengan modul `kopitera_master`: alur resep, data contoh, dan akun uji per peran sudah tersedia. Ini belum mencakup seluruh 13 use case. Lihat `docs/COBA-KOPITERA.md` untuk mencoba dan `docs/PEMETAAN-LAYAR-M4.md` untuk cakupan yang belum selesai.
+Modul PLM Enterprise tidak tersedia dalam Odoo Community. Alur pengajuan, pemeriksaan, persetujuan, rilis, versi, dan pemulihan resep diwujudkan melalui modul kustom `kopitera_master`. Resep yang berlaku disinkronkan menjadi Bill of Materials Manufacturing. Ke-13 use case Milestone 4 sudah tersedia.
 
 ## Perintah sehari-hari
 
@@ -65,12 +65,21 @@ Platform implementasi sekarang adalah Odoo 17 Community lokal melalui Docker, me
 
 ## Modul Kopitera
 
-Modul `kopitera_master` versi `17.0.1.1.0` menyediakan pengajuan resep, menu, dan bahan baku melalui pemeriksaan, persetujuan, serta rilis manual. Tersedia pembatasan peran/divisi, pengarsipan versi resep, snapshot perubahan menu/bahan, dan validasi penonaktifan bahan yang masih dipakai.
+Modul `kopitera_master` versi `17.0.1.2.0` (bergantung pada `mail` dan `mrp`) mencakup UC-01 sampai UC-13:
 
-Validasi: 25 pemeriksaan alur resep dan 41 pemeriksaan data master/tampilan berhasil. Fitur yang belum selesai dicatat pada pemetaan layar; modul ini belum memenuhi seluruh 13 use case.
+- pengajuan menu, bahan, dan resep melalui pemeriksaan, persetujuan, serta rilis manual;
+- perbandingan gramasi, log audit permanen, riwayat versi, dan pemulihan versi;
+- akun dan peran yang dikelola Manager Area;
+- laporan PDF/Excel dan notifikasi;
+- migrasi data awal dari Excel beserta Log Migrasi;
+- sinkronisasi resep berlaku ke BoM Manufacturing.
+
+Validasi: 25 + 41 + 70 = **136 pemeriksaan** lulus, baik pada instalasi baru maupun upgrade dari 17.0.1.1.0.
 
 - [Instalasi dan contoh resep](docs/COBA-KOPITERA.md)
 - [Pengajuan menu dan bahan](docs/COBA-MENU-DAN-BAHAN.md)
+- [Fitur lanjutan dan cara upgrade](docs/COBA-FITUR-LANJUTAN.md)
 - [Pemetaan layar Milestone 4](docs/PEMETAAN-LAYAR-M4.md)
+- [Catatan revisi laporan M2/M3/M4](docs/CATATAN-REVISI-LAPORAN.md)
 
-Script setup membuat akun uji beserta password acak pada setiap instalasi lokal. Password disimpan hanya di `AKUN-UJI-LOKAL.txt`. Database, akun, dan status contoh dari laptop pengembang tidak disertakan dalam repository.
+Script setup membuat akun uji beserta password acak pada setiap instalasi lokal. Password disimpan hanya di `AKUN-UJI-LOKAL.txt`. Database, akun, dan status contoh dari laptop pengembang tidak disertakan dalam repository. Jika `setup_kopitera_demo.py` gagal pada `ZoneInfo` di Windows, jalankan `pip install tzdata` terlebih dahulu.
