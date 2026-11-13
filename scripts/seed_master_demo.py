@@ -5,7 +5,7 @@ if not author:
 samples = [
     ('demo_change_menu_lemon', {
         'kind': 'menu', 'operation': 'create', 'division': 'bar',
-        'proposed_name': 'Es Teh Lemon — Contoh',
+        'proposed_name': 'Es Teh Lemon — Contoh', 'category': 'non_coffee', 'availability': 'available',
         'description': 'Minuman contoh untuk latihan pengajuan menu. Bukan menu operasional Kopitera.',
         'allergens': 'Tidak ditetapkan; perlu pemeriksaan',
         'reason': 'Latihan penambahan menu baru untuk Milestone 4; data fiktif.',

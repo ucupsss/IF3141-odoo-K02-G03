@@ -37,6 +37,7 @@
                   <h4 t-out="recipe.menu_id.name"/>
                   <p class="small">Versi <span t-out="recipe.version"/> · Nomor <span t-out="recipe.name"/> ·
                     Berlaku sejak <span t-out="recipe.released_at" t-options="{'widget': 'date'}"/> ·
+                    Jumlah porsi: <span t-out="recipe.portion_qty"/> ·
                     Alergen: <span t-out="recipe.menu_id.allergens or '-'"/></p>
                   <table class="table table-sm table-bordered">
                     <thead><tr><th>Bahan Baku</th><th class="text-end">Takaran per Porsi</th><th>Satuan</th></tr></thead>
@@ -44,7 +45,7 @@
                       <tr t-foreach="recipe.line_ids" t-as="line">
                         <td t-out="line.ingredient_id.name"/>
                         <td class="text-end" t-out="('%.3f' % line.quantity).rstrip('0').rstrip('.')"/>
-                        <td t-out="{'g': 'g', 'ml': 'ml', 'pcs': 'buah'}.get(line.unit, line.unit)"/>
+                        <td t-out="{'g': 'g', 'kg': 'kg', 'ml': 'ml', 'l': 'L', 'pcs': 'buah'}.get(line.unit, line.unit)"/>
                       </tr>
                     </tbody>
                   </table>

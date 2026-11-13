@@ -6,7 +6,7 @@ Pembaruan lokal 10 November 2026. Semua contoh di bawah adalah data fiktif untuk
 
 1. Pastikan Docker dan Odoo berjalan, lalu buka http://localhost:8070/web.
 2. Muat ulang halaman agar menu baru tampil. Login sebagai `headbar.kopitera`.
-3. Pilih aplikasi **Kopitera**. Sekarang tersedia **Pengajuan Menu** dan **Pengajuan Bahan**.
+3. Pilih aplikasi **Kopitera** → **Pengajuan**. Tersedia **Pengajuan Menu** dan **Pengajuan Bahan**.
 4. Password tiap akun tetap berada di `AKUN-UJI-LOKAL.txt` di folder proyek. Jangan mengunggah file tersebut.
 
 ## Contoh pada instalasi pengembangan
@@ -24,7 +24,7 @@ Nomor pengajuan dapat melewati beberapa angka karena pengujian menggunakan seque
 
 1. Login `reviewerbar.kopitera`, buka **Pengajuan Menu → Es Teh Lemon — Contoh**.
 2. Buka tab **Perbandingan** untuk melihat kondisi data sebelumnya dan usulan. Untuk menu baru, belum ada data sebelumnya.
-3. Pada tab **Pemeriksaan dan Keputusan**, isi Catatan Pemeriksaan. Simpan, lalu pilih **Sesuai — Teruskan**. Jika perlu koreksi, gunakan **Minta Perbaikan**; pengaju harus mengubah lalu mengirim ulang draf.
+3. Pada tab **Pemeriksaan dan Keputusan**, isi Catatan Pemeriksaan. Simpan, lalu pilih **Sesuai, Teruskan**. Jika perlu koreksi, gunakan **Minta Perbaikan**; pengaju harus mengubah lalu mengirim ulang draf.
 4. Login `manager.kopitera`. Buka pengajuan yang sama, isi **Tanggal Rilis** dan **Alasan Keputusan**, simpan, lalu klik **Setujui**. Gunakan tanggal hari ini jika ingin langsung mencoba rilis.
 5. Klik **Rilis Perubahan**, lalu konfirmasi. Baru pada tahap ini menu dibuat di Katalog Menu.
 6. Head Bar kemudian dapat membuka menu tersebut dan memilih **Ajukan Resep / Perubahan** untuk menyusun resepnya. Pengguna cabang melihat menu setelah tersedia resep yang berlaku.
@@ -60,7 +60,7 @@ Aturan yang perlu diketahui:
 
 UC-01 dan UC-02 kini memiliki alur tambah/ubah/nonaktif, dengan pemeriksaan, persetujuan, rilis, serta snapshot data sebelum/sesudah pada pengajuan. Pemeriksaan teknis dilakukan Head Bar/Head Kitchen; Manager Area tidak menggantikan peran pemeriksa hanya karena memiliki hak persetujuan.
 
-Perbandingan yang tersedia pada tahap ini adalah perbandingan **data menu dan bahan**. Perbandingan gramasi antarresep, pemulihan versi, pengelolaan akun oleh Manager Area, laporan khusus, notifikasi rilis lengkap, dan migrasi Excel tetap menjadi pekerjaan berikutnya.
+Perbandingan gramasi resep, pemulihan versi, akun, laporan, notifikasi, dan migrasi Excel dijelaskan di `COBA-FITUR-LANJUTAN.md`.
 
 ## Pengujian pengembangan
 

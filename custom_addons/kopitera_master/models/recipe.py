@@ -2,7 +2,36 @@ from odoo import api, fields, models, _
 from odoo.exceptions import AccessError, UserError, ValidationError
 
 
+# Pengajuan yang sudah dikirim dan belum selesai. Draf yang belum dikirim tidak menghalangi pengaju lain;
+# yang lebih dulu dikirim diproses, draf lain ditolak saat dikirim (FR-05).
+OPEN_STATES = ['review', 'revision', 'approval', 'approved']
 DIVISIONS = [('bar', 'Minuman / Bar'), ('kitchen', 'Makanan / Kitchen')]
+MENU_CATEGORIES = [
+    ('coffee', 'Kopi'), ('non_coffee', 'Non-Kopi'),
+    ('light_meal', 'Light Meals'), ('main_course', 'Main Course'), ('rice_bowl', 'Rice Bowl'),
+    ('pasta', 'Pasta'), ('dessert', 'Dessert'),
+]
+CATEGORY_DIVISION = {'coffee': 'bar', 'non_coffee': 'bar', 'light_meal': 'kitchen', 'main_course': 'kitchen',
+                     'rice_bowl': 'kitchen', 'pasta': 'kitchen', 'dessert': 'kitchen'}
+AVAILABILITY = [('available', 'Tersedia'), ('seasonal', 'Musiman / Terbatas'), ('unavailable', 'Tidak Tersedia')]
+# Satuan baku bahan (FR-02). Satuan takaran resep boleh berbeda asalkan satu kategori (FR-04).
+UNITS = [('g', 'gram'), ('kg', 'kilogram'), ('ml', 'mililiter'), ('l', 'liter'), ('pcs', 'buah')]
+UNIT_CATEGORY = {'g': 'mass', 'kg': 'mass', 'ml': 'volume', 'l': 'volume', 'pcs': 'unit'}
+UNIT_FACTOR = {'g': 1, 'kg': 1000, 'ml': 1, 'l': 1000, 'pcs': 1}
+
+
+def to_base(quantity, unit, base_unit):
+    """Konversi takaran ke satuan baku bahan (mis. 0,2 kg -> 200 g)."""
+    if not unit or not base_unit:
+        return quantity or 0.0
+    return (quantity or 0.0) * UNIT_FACTOR[unit] / UNIT_FACTOR[base_unit]
+
+
+def precise_enough(quantity, unit, division):
+    """QR-6: ketelitian 0,1 g/ml untuk Bar dan 1 g/ml untuk Kitchen (0,2 kg = 200 g lolos untuk dapur)."""
+    step = 1.0 if division == 'kitchen' else 0.1
+    amount = (quantity or 0.0) * UNIT_FACTOR[unit] / step
+    return abs(amount - round(amount)) <= 1e-6
 
 
 class KopiteraMenu(models.Model):
@@ -11,9 +40,11 @@ class KopiteraMenu(models.Model):
     _order = 'name'
 
     name = fields.Char('Nama Menu', required=True)
-    division = fields.Selection(DIVISIONS, 'Divisi', required=True)
+    division = fields.Selection(DIVISIONS, 'Jenis Menu', required=True)
+    category = fields.Selection(MENU_CATEGORIES, 'Kategori')
     description = fields.Text('Deskripsi')
     allergens = fields.Char('Alergen')
+    availability = fields.Selection(AVAILABILITY, 'Status Ketersediaan', default='available')
     current_recipe_id = fields.Many2one('kopitera.recipe', 'Resep Berlaku', readonly=True, copy=False)
 
     def action_propose_recipe(self):
@@ -22,11 +53,18 @@ class KopiteraMenu(models.Model):
         self.check_access_rule('read')
         if not self.env.user.has_group('kopitera_master.group_editor'):
             raise AccessError(_('Hanya pengaju yang dapat membuat draf resep.'))
+        open_recipe = self.env['kopitera.recipe'].sudo().search(
+            [('menu_id', '=', self.id), ('state', 'in', OPEN_STATES)], limit=1)
+        if open_recipe:
+            raise UserError(_('Menu ini masih memiliki pengajuan resep %s (%s) yang belum selesai. Lanjutkan pengajuan '
+                              'tersebut atau tunggu sampai dirilis/ditolak.') % (
+                open_recipe.name, dict(open_recipe._fields['state'].selection)[open_recipe.state]))
         current = self.current_recipe_id
         proposal = self.env['kopitera.recipe'].create({
             'menu_id': self.id,
+            'portion_qty': current.portion_qty or 1,
             'instructions': current.instructions or '',
-            'line_ids': [(0, 0, {'ingredient_id': line.ingredient_id.id, 'quantity': line.quantity})
+            'line_ids': [(0, 0, {'ingredient_id': line.ingredient_id.id, 'quantity': line.quantity, 'unit': line.unit})
                          for line in current.line_ids],
         })
         return {'type': 'ir.actions.act_window', 'name': _('Draf Resep'),
@@ -39,7 +77,7 @@ class KopiteraIngredient(models.Model):
     _order = 'name'
 
     name = fields.Char('Nama Bahan', required=True)
-    unit = fields.Selection([('g', 'gram'), ('ml', 'mililiter'), ('pcs', 'buah')], 'Satuan Baku', required=True)
+    unit = fields.Selection(UNITS, 'Satuan Baku', required=True)
     division = fields.Selection(DIVISIONS + [('shared', 'Bar dan Kitchen')], 'Area Penggunaan', required=True)
 
 
@@ -51,7 +89,11 @@ class KopiteraRecipe(models.Model):
 
     name = fields.Char('Nomor Pengajuan', readonly=True, default='Baru', copy=False)
     menu_id = fields.Many2one('kopitera.menu', 'Menu', required=True, ondelete='restrict', tracking=True)
-    division = fields.Selection(related='menu_id.division', store=True)
+    division = fields.Selection(related='menu_id.division', store=True, string='Divisi')
+    portion_qty = fields.Integer('Jumlah Porsi', default=1, tracking=True,
+                                 help='Jumlah porsi standar yang dihasilkan satu kali penyiapan. Takaran ditulis per porsi.')
+    proposed_release_date = fields.Date('Usulan Tanggal Rilis', tracking=True,
+                                        help='Usulan pengaju; tanggal rilis final ditetapkan Manager Area.')
     author_id = fields.Many2one('res.users', 'Pengaju', default=lambda self: self.env.user, readonly=True)
     state = fields.Selection([
         ('draft', 'Draf'), ('review', 'Menunggu Pemeriksaan'),
@@ -104,7 +146,7 @@ class KopiteraRecipe(models.Model):
         protected = {'state', 'version', 'reviewer_id', 'approver_id', 'released_at', 'name', 'author_id', 'division'}
         if protected.intersection(vals) and not self.env.su:
             raise AccessError(_('Gunakan tombol alur pengajuan untuk mengubah status.'))
-        if {'menu_id', 'reason', 'instructions', 'line_ids'}.intersection(vals):
+        if {'menu_id', 'reason', 'instructions', 'line_ids', 'portion_qty', 'proposed_release_date'}.intersection(vals):
             self._check_content_edit()
         if 'review_note' in vals:
             self._check_step('review', 'group_editor')
@@ -148,6 +190,13 @@ class KopiteraRecipe(models.Model):
         for record in self:
             if not record.line_ids or not (record.reason or '').strip() or not (record.instructions or '').strip():
                 raise ValidationError(_('Isi komposisi, alasan pengajuan, dan langkah penyiapan terlebih dahulu.'))
+            if record.portion_qty < 1:
+                raise ValidationError(_('Jumlah porsi minimal 1.'))
+            other = self.sudo().search([('menu_id', '=', record.menu_id.id), ('id', '!=', record.id),
+                                        ('state', 'in', OPEN_STATES)], limit=1)
+            if other:
+                raise UserError(_('Pengajuan ditolak: menu %s masih memiliki pengajuan resep %s yang belum selesai.')
+                                % (record.menu_id.name, other.name))
         self._transition({'state': 'review'})
         self._finish_activities()
         self._notify_group('group_editor', _('Periksa pengajuan resep Kopitera'))
@@ -217,13 +266,37 @@ class KopiteraRecipeLine(models.Model):
 
     recipe_id = fields.Many2one('kopitera.recipe', required=True, ondelete='cascade')
     ingredient_id = fields.Many2one('kopitera.ingredient', 'Bahan Baku', required=True, ondelete='restrict')
-    quantity = fields.Float('Gramasi / Takaran', required=True, digits=(12, 1))
-    unit = fields.Selection(related='ingredient_id.unit', string='Satuan Baku')
+    quantity = fields.Float('Takaran per Porsi', required=True, digits=(12, 1))
+    unit = fields.Selection(UNITS, 'Satuan Takaran', compute='_compute_unit', store=True, readonly=False, precompute=True)
+    base_unit = fields.Selection(related='ingredient_id.unit', string='Satuan Baku')
 
     _sql_constraints = [
         ('positive_quantity', 'CHECK(quantity > 0)', 'Takaran harus lebih besar dari nol.'),
         ('unique_ingredient', 'UNIQUE(recipe_id, ingredient_id)', 'Bahan yang sama cukup ditulis satu kali.'),
     ]
+
+    @api.depends('ingredient_id')
+    def _compute_unit(self):
+        for line in self:
+            base = line.ingredient_id.unit
+            if base and (not line.unit or UNIT_CATEGORY[line.unit] != UNIT_CATEGORY[base]):
+                line.unit = base
+
+    def _base_quantity(self):
+        self.ensure_one()
+        return to_base(self.quantity, self.unit, self.ingredient_id.unit)
+
+    @api.constrains('unit', 'ingredient_id', 'quantity')
+    def _check_unit_precision(self):
+        for line in self:
+            base = line.ingredient_id.unit
+            if line.unit and base and UNIT_CATEGORY[line.unit] != UNIT_CATEGORY[base]:
+                raise ValidationError(_('Satuan takaran %s tidak satu kategori dengan satuan baku %s untuk bahan %s.') % (
+                    dict(UNITS)[line.unit], dict(UNITS)[base], line.ingredient_id.name))
+            # QR-6: Bar teliti 0,1 g/ml; Kitchen dicatat dalam bilangan bulat (1 g/ml). Dihitung dalam g/ml/buah.
+            if line.unit and not precise_enough(line.quantity, line.unit, line.recipe_id.division):
+                raise ValidationError(_('Takaran %s melebihi ketelitian %s.') % (
+                    line.ingredient_id.name, _('dapur (1 g/ml)') if line.recipe_id.division == 'kitchen' else _('bar (0,1 g/ml)')))
 
     @api.constrains('ingredient_id', 'recipe_id')
     def _check_division(self):

@@ -24,7 +24,7 @@
       <form string="Pengajuan Menu dan Bahan">
       <header>
         <button name="action_submit" type="object" string="Kirim untuk Diperiksa" class="oe_highlight" invisible="state not in ['draft','revision'] or not is_author"/>
-        <button name="action_review" type="object" string="Sesuai — Teruskan" class="oe_highlight" invisible="state != 'review' or not can_review"/>
+        <button name="action_review" type="object" string="Sesuai, Teruskan" class="oe_highlight" invisible="state != 'review' or not can_review"/>
         <button name="action_return" type="object" string="Minta Perbaikan" invisible="state != 'review' or not can_review"/>
         <button name="action_approve" type="object" string="Setujui" class="oe_highlight" groups="kopitera_master.group_manager" invisible="state != 'approval'"/>
         <button name="action_reject" type="object" string="Tolak" groups="kopitera_master.group_manager" invisible="state != 'approval'"/>
@@ -56,13 +56,15 @@
           <page string="Data yang Diusulkan">
             <group invisible="operation == 'deactivate'">
               <field name="proposed_name" required="operation != 'deactivate'" readonly="state not in ['draft','revision'] or not is_author"/>
+              <field name="category" invisible="kind != 'menu'" required="kind == 'menu' and operation != 'deactivate'" readonly="state not in ['draft','revision'] or not is_author"/>
               <field name="description" invisible="kind != 'menu'" readonly="state not in ['draft','revision'] or not is_author"/>
-              <field name="allergens" invisible="kind != 'menu'" readonly="state not in ['draft','revision'] or not is_author"/>
+              <field name="allergens" invisible="kind != 'menu'" required="kind == 'menu' and operation != 'deactivate'" placeholder="Contoh: Susu, kacang, telur, gluten; tulis - jika tidak ada" readonly="state not in ['draft','revision'] or not is_author"/>
+              <field name="availability" invisible="kind != 'menu'" required="kind == 'menu' and operation != 'deactivate'" readonly="state not in ['draft','revision'] or not is_author"/>
               <field name="unit" invisible="kind != 'ingredient'" required="kind == 'ingredient' and operation != 'deactivate'" readonly="state not in ['draft','revision'] or not is_author"/>
               <field name="usage" invisible="kind != 'ingredient'" required="kind == 'ingredient' and operation != 'deactivate'" readonly="state not in ['draft','revision'] or not is_author"/>
             </group>
             <div class="alert alert-warning" role="alert" invisible="operation != 'deactivate'">Data akan dinonaktifkan setelah rilis. Bahan yang masih digunakan resep berlaku tidak dapat dinonaktifkan.</div>
-            <group><field name="reason" placeholder="Jelaskan alasan penambahan, perubahan, atau penonaktifan..." readonly="state not in ['draft','revision'] or not is_author"/></group>
+            <group><field name="reason" placeholder="Jelaskan alasan penambahan, perubahan, atau penonaktifan..." readonly="state not in ['draft','revision'] or not is_author"/><field name="proposed_release_date" readonly="state not in ['draft','revision'] or not is_author"/></group>
           </page>
           <page string="Perbandingan"><div class="row g-3"><div class="col-12 col-lg-6"><h3>Data sebelumnya</h3><field name="before_text" nolabel="1" class="d-block w-100"/></div><div class="col-12 col-lg-6"><h3>Usulan / hasil rilis</h3><field name="proposed_text" nolabel="1" class="d-block w-100"/></div></div></page>
           <page string="Pemeriksaan dan Keputusan"><group>

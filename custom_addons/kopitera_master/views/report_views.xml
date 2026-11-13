@@ -14,7 +14,9 @@
             <group string="Jenis dan Filter">
               <field name="report_type" widget="radio"/>
               <field name="division"/>
+              <field name="category" invisible="report_type == 'history'"/>
               <field name="menu_status" invisible="report_type != 'catalog'"/>
+              <field name="version_no" invisible="report_type != 'recipe'"/>
               <field name="menu_ids" widget="many2many_tags" invisible="report_type != 'recipe'" options="{'no_create': True}"/>
               <field name="history_action" invisible="report_type != 'history'"/>
               <field name="date_from" invisible="report_type != 'history'"/>

@@ -4,9 +4,9 @@ from markupsafe import Markup, escape
 from odoo import api, fields, models, _
 from odoo.exceptions import AccessError, UserError, ValidationError
 
-from .recipe import DIVISIONS
+from .recipe import DIVISIONS, to_base
 
-UNIT_LABELS = {'g': 'g', 'ml': 'ml', 'pcs': 'buah'}
+UNIT_LABELS = {'g': 'g', 'kg': 'kg', 'ml': 'ml', 'l': 'L', 'pcs': 'buah'}
 
 AUDIT_ACTIONS = [
     ('submit', 'Diajukan'),
@@ -36,6 +36,8 @@ def composition_text(recipe):
         return 'Belum ada resep berlaku.'
     lines = ['%s: %s %s' % (line.ingredient_id.name, _fmt(line.quantity), UNIT_LABELS.get(line.unit, line.unit or ''))
              for line in recipe.line_ids]
+    if lines and recipe.portion_qty:
+        lines.insert(0, 'Jumlah porsi: %s' % recipe.portion_qty)
     return '\n'.join(lines) or 'Belum ada komposisi.'
 
 
@@ -247,7 +249,7 @@ class RecipeHistory(models.Model):
     def _kp_after_text(self):
         return composition_text(self)
 
-    @api.depends('line_ids.quantity', 'line_ids.ingredient_id', 'state', 'menu_id', 'previous_recipe_id')
+    @api.depends('line_ids.quantity', 'line_ids.unit', 'line_ids.ingredient_id', 'state', 'menu_id', 'previous_recipe_id')
     @api.depends_context('uid')
     def _compute_comparison_html(self):
         for record in self:
@@ -268,20 +270,23 @@ class RecipeHistory(models.Model):
         for key in order:
             before, after = old.get(key), new.get(key)
             line = after or before
+            # Dibandingkan dalam satuan baku bahan, sehingga 0,2 kg dan 200 g dianggap sama (FR-04).
+            qty_before = to_base(before.quantity, before.unit, before.ingredient_id.unit) if before else 0.0
+            qty_after = to_base(after.quantity, after.unit, after.ingredient_id.unit) if after else 0.0
             if before and after:
-                diff = after.quantity - before.quantity
+                diff = qty_after - qty_before
                 status, css = ((_('Tetap'), '') if abs(diff) < 1e-9 else
                                (_('Bertambah'), 'table-warning') if diff > 0 else (_('Berkurang'), 'table-warning'))
                 diff_text = '%+g' % diff if abs(diff) >= 1e-9 else '0'
             elif after:
-                status, css, diff_text = _('Bahan Baru'), 'table-success', '+' + _fmt(after.quantity)
+                status, css, diff_text = _('Bahan Baru'), 'table-success', '+' + _fmt(qty_after)
             else:
-                status, css, diff_text = _('Dihapus'), 'table-danger', '-' + _fmt(before.quantity)
+                status, css, diff_text = _('Dihapus'), 'table-danger', '-' + _fmt(qty_before)
             unit = UNIT_LABELS.get(line.ingredient_id.unit, line.ingredient_id.unit or '')
             rows.append(Markup('<tr class="%s"><td>%s</td><td>%s</td><td class="text-end">%s</td>'
                                '<td class="text-end">%s</td><td class="text-end">%s</td><td>%s</td></tr>') % (
-                css, line.ingredient_id.name, unit, _fmt(before.quantity) if before else '-',
-                _fmt(after.quantity) if after else '-', diff_text, status))
+                css, line.ingredient_id.name, unit, _fmt(qty_before) if before else '-',
+                _fmt(qty_after) if after else '-', diff_text, status))
         if not rows:
             rows.append(Markup('<tr><td colspan="6" class="text-muted">Belum ada komposisi.</td></tr>'))
         head = Markup('<table class="table table-sm table-bordered o_kopitera_compare"><thead class="table-light"><tr>'
@@ -391,8 +396,9 @@ class RestoreWizard(models.TransientModel):
             'menu_id': target.menu_id.id,
             'restored_from_id': target.id,
             'instructions': target.instructions,
+            'portion_qty': target.portion_qty or 1,
             'reason': _('Pemulihan ke versi %s. %s') % (target.version, self.reason.strip()),
-            'line_ids': [(0, 0, {'ingredient_id': line.ingredient_id.id, 'quantity': line.quantity})
+            'line_ids': [(0, 0, {'ingredient_id': line.ingredient_id.id, 'quantity': line.quantity, 'unit': line.unit})
                          for line in target.line_ids],
         })
         proposal._kp_log('restore', before=composition_text(target.menu_id.sudo().current_recipe_id),

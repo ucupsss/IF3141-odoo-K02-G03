@@ -24,28 +24,27 @@
 | stafbar.kopitera | Staf Bar | Membaca resep minuman yang berlaku |
 | stafkitchen.kopitera | Staf Kitchen | Membaca resep makanan yang berlaku |
 | mod.kopitera | Manager on Duty | Membaca resep berlaku kedua divisi |
-| headfloor.kopitera | Head Floor | Membaca resep berlaku kedua divisi |
+| headfloor.kopitera | Head Floor | Membaca resep berlaku kedua divisi, menerima notifikasi rilis, membuat laporan |
+| dev.kopitera | Pengembang Eksternal | Migrasi data awal dari Excel dan Log Migrasi |
 
-Akun admin yang sudah ada dipakai untuk pekerjaan teknis Pengembang Eksternal pada tahap awal. Dua akun per peran head membantu memperagakan pengaju dan pemeriksa berbeda. Cabang belum dimodelkan sebagai penugasan pengguna. Hak akses Head Floor untuk laporan/notifikasi penuh masih perlu dilengkapi.
+Akun `dev.kopitera` mewakili Pengembang Eksternal (admin juga dapat menjalankan migrasi). Dua akun per peran head membantu memperagakan pengaju dan pemeriksa berbeda. Cabang setiap akun tercatat pada Administrasi → Akun Pengguna.
 
 ## Latihan pertama: perubahan Es Kopi Susu
 
 Data resep awal Es Kopi Susu dan Nasi Goreng sepenuhnya fiktif. Masing-masing sudah memiliki versi 1 yang berlaku dan satu draf latihan. Angka takaran bukan rekomendasi produksi.
 
-1. Login **headbar.kopitera**. Buka Kopitera → Pengajuan Resep, lalu pilih draf Es Kopi Susu.
+1. Login **headbar.kopitera**. Buka Kopitera → Pengajuan → Pengajuan Resep, lalu pilih draf Es Kopi Susu.
 2. Pada tab Komposisi dan Gramasi, ubah Sirup Gula Aren dari 20 menjadi 15 ml. Pada tab Pengajuan dan Pemeriksaan, isi alasan, misalnya “Contoh pengurangan rasa manis untuk latihan”. Simpan, lalu klik **Kirim untuk Diperiksa**.
-3. Logout dan login **reviewerbar.kopitera**. Buka pengajuan yang sama. Isi Catatan Pemeriksaan, simpan, lalu klik **Sesuai — Teruskan**. Tombol **Minta Perbaikan** mengembalikan draf kepada pengaju.
+3. Logout dan login **reviewerbar.kopitera**. Buka pengajuan yang sama. Isi Catatan Pemeriksaan, simpan, lalu klik **Sesuai, Teruskan**. Tombol **Minta Perbaikan** mengembalikan draf kepada pengaju.
 4. Login **manager.kopitera**. Isi Tanggal Rilis dengan tanggal hari ini dan Alasan Keputusan, simpan, lalu klik **Setujui**. Resep versi 1 tetap berlaku pada tahap ini.
-5. Klik **Rilis ke Seluruh Cabang** dan konfirmasi. Resep menjadi versi 2; versi 1 masuk Riwayat Versi dengan status Arsip. Rilis sebelum tanggal yang ditetapkan ditolak oleh sistem.
-6. Login **stafbar.kopitera**, buka Kopitera → Resep Berlaku. Pastikan Es Kopi Susu versi 2 tampil dengan takaran baru dan tidak dapat diedit. Nasi Goreng tidak tampil pada akun Staf Bar.
+5. Klik **Rilis ke Seluruh Cabang** dan konfirmasi. Resep menjadi versi 2; versi 1 masuk Riwayat → Riwayat Versi Resep dengan status Arsip, dan BoM Manufacturing ikut diperbarui. Rilis sebelum tanggal yang ditetapkan ditolak oleh sistem.
+6. Login **stafbar.kopitera**, buka Kopitera → Data Induk → Resep Berlaku. Pastikan Es Kopi Susu versi 2 tampil dengan takaran baru dan tidak dapat diedit. Nasi Goreng tidak tampil pada akun Staf Bar.
 
-Untuk latihan berikutnya, Head Bar dapat membuka Katalog Menu → Es Kopi Susu → **Ajukan Resep / Perubahan**. Sistem menyalin resep berlaku ke draf baru. Menggunakan browser privat atau profil browser terpisah dapat memudahkan pergantian akun; tab biasa dalam satu profil berbagi sesi login yang sama.
+Untuk latihan berikutnya, Head Bar dapat membuka Data Induk → Katalog Menu → Es Kopi Susu → **Ajukan Resep / Perubahan**. Sistem menyalin resep berlaku ke draf baru. Menggunakan browser privat atau profil browser terpisah dapat memudahkan pergantian akun; tab biasa dalam satu profil berbagi sesi login yang sama.
 
-## Batas tahap pertama
+## Fitur lanjutan
 
-Modul sudah menyediakan alur resep, pemeriksaan, perbaikan, persetujuan/penolakan, rilis manual, versi arsip, dan pembatasan baca per divisi. Ini prototipe fungsional untuk membantu screenshot Milestone 4, bukan implementasi produksi.
-
-Data menu dan bahan tetap dibaca melalui katalog, sedangkan perubahan dilakukan melalui Pengajuan Menu/Pengajuan Bahan yang kini sudah tersedia. Lihat `COBA-MENU-DAN-BAHAN.md`. Pemulihan versi, perbandingan gramasi, pengelolaan akun oleh Manager Area, laporan khusus, notifikasi rilis lengkap, serta migrasi Excel masih perlu dibuat. Resep disimpan dalam modul Kopitera; belum disinkronkan ke Manufacturing BoM. Lihat `PEMETAAN-LAYAR-M4.md` untuk cakupan setiap layar.
+Perbandingan gramasi, log audit, pemulihan versi, akun dan peran, laporan, notifikasi, migrasi Excel, dan sinkronisasi BoM sudah tersedia sejak versi 17.0.1.2.0. Lihat `COBA-FITUR-LANJUTAN.md`. Penyesuaian dengan laporan Milestone 4 (kategori menu, jumlah porsi, satuan takaran, laporan CSV) ada di `COBA-FITUR-V130.md`. Modul ini prototipe tugas besar, bukan implementasi produksi.
 
 ## Memasang di laptop anggota lain
 

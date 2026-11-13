@@ -1,4 +1,4 @@
-"""Penyelarasan data setelah pemasangan atau upgrade ke 17.0.1.2.0."""
+"""Penyelarasan data setelah pemasangan atau upgrade (17.0.1.2.0 dan 17.0.1.3.0)."""
 
 
 def sync_existing_data(env):
@@ -29,5 +29,22 @@ def sync_existing_data(env):
                 newer.write({'previous_recipe_id': older.id})
 
 
+def fill_menu_categories(env):
+    """Menu lama belum memiliki kategori: isi tebakan awal dari jenis menu (dapat diubah lewat pengajuan)."""
+    Menu = env['kopitera.menu'].sudo().with_context(active_test=False)
+    for menu in Menu.search([('category', '=', False)]):
+        name = menu.name.lower()
+        if menu.division == 'bar':
+            category = 'coffee' if any(word in name for word in ('kopi', 'coffee', 'espresso', 'latte')) else 'non_coffee'
+        else:
+            category = ('rice_bowl' if 'rice bowl' in name else 'pasta' if any(w in name for w in ('pasta', 'spaghetti'))
+                        else 'dessert' if any(w in name for w in ('cake', 'dessert', 'pudding')) else 'main_course')
+        # SQL langsung agar nomor revisi data menu tidak bertambah karena penyelarasan teknis.
+        env.cr.execute('UPDATE kopitera_menu SET category = %s WHERE id = %s', [category, menu.id])
+    env.cr.execute("UPDATE kopitera_menu SET availability = 'available' WHERE availability IS NULL")
+    Menu.invalidate_model(['category', 'availability'])
+
+
 def post_init_hook(env):
     sync_existing_data(env)
+    fill_menu_categories(env)

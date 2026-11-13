@@ -1,7 +1,10 @@
 from odoo import api, fields, models, _
 from odoo.exceptions import AccessError, UserError, ValidationError
 
-from .recipe import DIVISIONS
+from .recipe import AVAILABILITY, CATEGORY_DIVISION, DIVISIONS, MENU_CATEGORIES, UNITS
+
+
+MENU_FIELDS = ['category', 'description', 'allergens', 'availability']
 
 
 class MasterChange(models.Model):
@@ -20,10 +23,13 @@ class MasterChange(models.Model):
     proposed_name = fields.Char('Nama yang Diusulkan')
     description = fields.Text('Deskripsi yang Diusulkan')
     allergens = fields.Char('Alergen yang Diusulkan')
-    unit = fields.Selection([('g', 'gram'), ('ml', 'mililiter'), ('pcs', 'buah')], 'Satuan Baku')
+    category = fields.Selection(MENU_CATEGORIES, 'Kategori Menu')
+    availability = fields.Selection(AVAILABILITY, 'Status Ketersediaan', default='available')
+    unit = fields.Selection(UNITS, 'Satuan Baku')
     usage = fields.Selection(DIVISIONS + [('shared', 'Bar dan Kitchen')], 'Area Penggunaan',
                              default=lambda self: 'kitchen' if self.env.user.has_group('kopitera_master.group_head_kitchen') else 'bar')
     reason = fields.Text('Alasan Pengajuan', tracking=True)
+    proposed_release_date = fields.Date('Usulan Tanggal Rilis', tracking=True)
     author_id = fields.Many2one('res.users', 'Pengaju', default=lambda self: self.env.user, readonly=True)
     reviewer_id = fields.Many2one('res.users', 'Diperiksa oleh', readonly=True, copy=False)
     approver_id = fields.Many2one('res.users', 'Diputuskan oleh', readonly=True, copy=False)
@@ -46,7 +52,8 @@ class MasterChange(models.Model):
     can_review = fields.Boolean(compute='_compute_is_author')
 
     _content_fields = {'kind', 'operation', 'division', 'menu_id', 'ingredient_id', 'proposed_name',
-                       'description', 'allergens', 'unit', 'usage', 'reason'}
+                       'description', 'allergens', 'category', 'availability', 'unit', 'usage', 'reason',
+                       'proposed_release_date'}
     _protected_fields = {'name', 'author_id', 'reviewer_id', 'approver_id', 'state', 'released_at',
                          'before_data', 'after_data', 'result_menu_id', 'result_ingredient_id'}
 
@@ -58,12 +65,16 @@ class MasterChange(models.Model):
             record.can_review = not record.is_author and (self.env.user.has_group('kopitera_master.group_head_bar') or self.env.user.has_group('kopitera_master.group_head_kitchen'))
 
     @api.depends('before_data', 'after_data', 'kind', 'operation', 'division', 'proposed_name',
-                 'description', 'allergens', 'unit', 'usage')
+                 'description', 'allergens', 'category', 'availability', 'unit', 'usage')
     def _compute_comparison(self):
-        labels = {'name': 'Nama', 'division': 'Divisi / Area', 'description': 'Deskripsi',
-                  'allergens': 'Alergen', 'unit': 'Satuan', 'active': 'Aktif', 'revision': 'Revisi Data'}
+        labels = {'name': 'Nama', 'division': 'Jenis Menu / Area', 'category': 'Kategori', 'description': 'Deskripsi',
+                  'allergens': 'Alergen', 'availability': 'Status Ketersediaan', 'unit': 'Satuan',
+                  'active': 'Aktif', 'revision': 'Revisi Data'}
+        names = {'division': dict(DIVISIONS + [('shared', 'Bar dan Kitchen')]), 'category': dict(MENU_CATEGORIES),
+                 'availability': dict(AVAILABILITY), 'unit': dict(UNITS), 'active': {True: 'Ya', False: 'Tidak'}}
         def render(data):
-            return '\n'.join('%s: %s' % (labels.get(key, key), value if value is not False else '-')
+            return '\n'.join('%s: %s' % (labels.get(key, key), names[key].get(value, value) if key in names
+                                         else value if value is not False else '-')
                              for key, value in data.items())
         for record in self:
             record.before_text = ('Data baru; belum ada data sebelumnya.' if record.operation == 'create'
@@ -91,6 +102,8 @@ class MasterChange(models.Model):
                 self.division = target.division
                 self.description = target.description
                 self.allergens = target.allergens
+                self.category = target.category
+                self.availability = target.availability
             else:
                 self.unit = target.unit
                 self.usage = target.division
@@ -155,7 +168,7 @@ class MasterChange(models.Model):
         if not target:
             return {}
         names = ['name', 'division', 'active', 'revision']
-        names += ['description', 'allergens'] if self.kind == 'menu' else ['unit']
+        names += MENU_FIELDS if self.kind == 'menu' else ['unit']
         return {name: target[name] for name in names}
 
     def _proposed_values(self):
@@ -164,7 +177,8 @@ class MasterChange(models.Model):
             return {'active': False}
         vals = {'name': (self.proposed_name or '').strip()}
         if self.kind == 'menu':
-            vals.update(division=self.division, description=self.description or False, allergens=self.allergens or False)
+            vals.update(division=self.division, category=self.category, description=self.description or False,
+                        allergens=self.allergens or False, availability=self.availability)
         else:
             vals.update(division=self.usage, unit=self.unit)
         return vals
@@ -191,6 +205,13 @@ class MasterChange(models.Model):
         if self.operation != 'deactivate':
             if not (self.proposed_name or '').strip():
                 raise ValidationError(_('Nama yang diusulkan wajib diisi.'))
+            self._check_unique_name(target)
+            if self.kind == 'menu':
+                if not self.category or not (self.allergens or '').strip() or not self.availability:
+                    raise ValidationError(_('Kategori, alergen, dan status ketersediaan menu wajib diisi '
+                                            '(tulis "-" jika tidak ada alergen).'))
+                if CATEGORY_DIVISION[self.category] != self.division:
+                    raise ValidationError(_('Kategori menu tidak sesuai dengan jenis menu (minuman/makanan).'))
             if self.kind == 'ingredient':
                 if not self.unit or self.usage not in (self.division, 'shared'):
                     raise ValidationError(_('Pilih satuan dan area penggunaan yang sesuai divisi pengaju.'))
@@ -198,6 +219,17 @@ class MasterChange(models.Model):
                     target._validate_reference_change(self._proposed_values())
         if self.operation == 'deactivate' and self.kind == 'ingredient':
             target._validate_reference_change({'active': False})
+
+    def _check_unique_name(self, target):
+        """FR-01/FR-02: nama menu dan bahan baku harus unik di antara data aktif."""
+        model = 'kopitera.menu' if self.kind == 'menu' else 'kopitera.ingredient'
+        name = (self.proposed_name or '').strip()
+        domain = [('name', '=ilike', name), ('active', '=', True)]
+        if target:
+            domain.append(('id', '!=', target.id))
+        if self.env[model].sudo().search_count(domain):
+            raise ValidationError(_('%s "%s" sudah terdaftar. Gunakan nama lain atau ajukan perubahan pada data yang ada.')
+                                  % ('Menu' if self.kind == 'menu' else 'Bahan baku', name))
 
     def _notify(self, group, summary):
         for record in self:
@@ -277,7 +309,8 @@ class MasterChange(models.Model):
                 table = 'kopitera_menu' if record.kind == 'menu' else 'kopitera_ingredient'
                 self.env.cr.execute('SELECT id FROM ' + table + ' WHERE id = %s FOR UPDATE', [target.id])
                 target.invalidate_recordset()
-                if record.before_data != record._snapshot():
+                current = record._snapshot()
+                if any(current.get(key) != value for key, value in (record.before_data or {}).items()):
                     raise UserError(_('Data tujuan telah berubah sejak pengajuan dikirim. Gunakan Minta Pembaruan, periksa kembali draf, lalu ulangi persetujuan.'))
             record._validate_proposal()
             values = record._proposed_values()
@@ -286,7 +319,7 @@ class MasterChange(models.Model):
                 target = self.env[model].sudo().create(values)
             else:
                 target.sudo().write(values)
-            names = ['name', 'division', 'active', 'revision'] + (['description', 'allergens'] if record.kind == 'menu' else ['unit'])
+            names = ['name', 'division', 'active', 'revision'] + (MENU_FIELDS if record.kind == 'menu' else ['unit'])
             record._transition({
                 'state': 'released', 'released_at': fields.Datetime.now(),
                 'result_menu_id': target.id if record.kind == 'menu' else False,
@@ -305,7 +338,7 @@ class MenuLifecycle(models.Model):
     revision = fields.Integer('Revisi Data', default=1, readonly=True)
 
     def write(self, vals):
-        business = {'name', 'division', 'description', 'allergens', 'active'}
+        business = {'name', 'division', 'category', 'description', 'allergens', 'availability', 'active'}
         if business.intersection(vals):
             for record in self:
                 if 'division' in vals and vals['division'] != record.division and self.env['kopitera.recipe'].sudo().search_count([('menu_id', '=', record.id)]):
@@ -326,6 +359,7 @@ class MenuLifecycle(models.Model):
         proposal = self.env['kopitera.master.change'].create({
             'kind': 'menu', 'operation': 'update', 'division': self.division, 'menu_id': self.id,
             'proposed_name': self.name, 'description': self.description, 'allergens': self.allergens,
+            'category': self.category, 'availability': self.availability,
         })
         return {'type': 'ir.actions.act_window', 'name': _('Pengajuan Menu'),
                 'res_model': proposal._name, 'res_id': proposal.id, 'view_mode': 'form'}
@@ -347,8 +381,12 @@ class IngredientLifecycle(models.Model):
         for record in self:
             if 'unit' in vals and vals['unit'] != record.unit and lines.search_count([('ingredient_id', '=', record.id)]):
                 raise ValidationError(_('Satuan bahan yang sudah dipakai resep tidak dapat diubah. Ajukan bahan baru dengan satuan yang benar.'))
-            if vals.get('active') is False and lines.search_count([('ingredient_id', '=', record.id), ('recipe_id.state', '=', 'published')]):
-                raise ValidationError(_('Bahan masih digunakan oleh resep berlaku dan tidak dapat dinonaktifkan.'))
+            if vals.get('active') is False:
+                used = lines.search([('ingredient_id', '=', record.id), ('recipe_id.state', '=', 'published')])
+                if used:
+                    raise ValidationError(_('Bahan %s masih digunakan oleh resep berlaku dan tidak dapat dinonaktifkan. '
+                                            'Resep yang memakai bahan ini: %s.') % (
+                        record.name, ', '.join(sorted(set(used.mapped('recipe_id.menu_id.name'))))))
             if 'division' in vals and vals['division'] != 'shared' and lines.search_count([
                 ('ingredient_id', '=', record.id), ('recipe_id.state', '=', 'published'),
                 ('recipe_id.division', '!=', vals['division']),

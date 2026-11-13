@@ -1,5 +1,6 @@
 """Laporan rekap katalog, lembar resep, dan riwayat pembaruan (UC-11, FR-12)."""
 import base64
+import csv
 import io
 
 from markupsafe import Markup
@@ -8,6 +9,7 @@ from odoo import api, fields, models, _
 from odoo.exceptions import UserError
 
 from .history import AUDIT_ACTIONS, UNIT_LABELS, _fmt
+from .recipe import AVAILABILITY, MENU_CATEGORIES
 
 try:
     import xlsxwriter
@@ -27,27 +29,38 @@ class KopiteraReportWizard(models.TransientModel):
 
     report_type = fields.Selection(REPORT_TYPES, 'Jenis Laporan', required=True, default='catalog')
     division = fields.Selection([('all', 'Semua divisi yang dapat diakses'), ('bar', 'Minuman / Bar'),
-                                 ('kitchen', 'Makanan / Kitchen')], 'Kategori', required=True, default='all')
+                                 ('kitchen', 'Makanan / Kitchen')], 'Jenis Menu', required=True, default='all')
+    category = fields.Selection([('all', 'Semua kategori')] + MENU_CATEGORIES, 'Kategori Menu', required=True, default='all')
+    version_no = fields.Integer('Nomor Versi', default=0,
+                                help='0 = versi yang sedang berlaku. Isi nomor versi untuk mencetak versi arsip tertentu.')
     menu_ids = fields.Many2many('kopitera.menu', string='Menu', help='Kosongkan untuk semua menu yang memiliki resep berlaku.')
     menu_status = fields.Selection([('active', 'Aktif'), ('inactive', 'Nonaktif'), ('all', 'Semua')],
                                    'Status Menu', default='active', required=True)
     history_action = fields.Selection([('all', 'Semua tindakan')] + AUDIT_ACTIONS, 'Tindakan', default='all', required=True)
     date_from = fields.Date('Dari Tanggal')
     date_to = fields.Date('Sampai Tanggal')
-    output_format = fields.Selection([('pdf', 'PDF'), ('xlsx', 'Excel (.xlsx)')], 'Format Berkas', default='pdf', required=True)
+    output_format = fields.Selection([('pdf', 'PDF'), ('xlsx', 'Excel (.xlsx)'), ('csv', 'CSV')], 'Format Berkas',
+                                     default='pdf', required=True)
     preview_html = fields.Html('Pratinjau', compute='_compute_preview', sanitize=False)
     file_data = fields.Binary('Berkas', readonly=True, attachment=False)
     file_name = fields.Char('Nama Berkas', readonly=True)
 
     # ------------------------------------------------------------------ data
-    def _division_domain(self, field='division'):
-        return [] if self.division == 'all' else [(field, '=', self.division)]
+    def _division_domain(self, field='division', category_field=None):
+        domain = [] if self.division == 'all' else [(field, '=', self.division)]
+        if category_field and self.category != 'all':
+            domain.append((category_field, '=', self.category))
+        return domain
 
     def _title(self):
         return dict(REPORT_TYPES)[self.report_type]
 
     def _filter_text(self):
-        parts = [_('Kategori: %s') % dict(self._fields['division'].selection)[self.division]]
+        parts = [_('Jenis Menu: %s') % dict(self._fields['division'].selection)[self.division]]
+        if self.report_type in ('catalog', 'recipe'):
+            parts.append(_('Kategori: %s') % dict(self._fields['category'].selection)[self.category])
+        if self.report_type == 'recipe':
+            parts.append(_('Versi: %s') % (self.version_no or _('berlaku')))
         if self.report_type == 'catalog':
             parts.append(_('Status: %s') % dict(self._fields['menu_status'].selection)[self.menu_status])
         if self.report_type == 'recipe' and self.menu_ids:
@@ -59,20 +72,25 @@ class KopiteraReportWizard(models.TransientModel):
 
     def _catalog_rows(self):
         Menu = self.env['kopitera.menu'].with_context(active_test=False)
-        domain = self._division_domain()
+        domain = self._division_domain(category_field='category')
         if self.menu_status != 'all':
             domain.append(('active', '=', self.menu_status == 'active'))
         rows = []
         for menu in Menu.search(domain, order='division, name'):
             recipe = menu.current_recipe_id
-            rows.append([menu.name, dict(menu._fields['division'].selection)[menu.division], menu.allergens or '-',
+            rows.append([menu.name, dict(menu._fields['division'].selection)[menu.division],
+                         dict(MENU_CATEGORIES).get(menu.category, '-'), menu.allergens or '-',
+                         dict(AVAILABILITY).get(menu.availability, '-'),
                          'Aktif' if menu.active else 'Nonaktif', recipe.version or '-',
                          fields.Datetime.to_string(recipe.released_at)[:10] if recipe.released_at else '-',
                          len(recipe.line_ids)])
-        return [_('Nama Menu'), _('Kategori'), _('Alergen'), _('Status'), _('Versi Resep'), _('Tanggal Berlaku'), _('Jumlah Bahan')], rows
+        return [_('Nama Menu'), _('Jenis Menu'), _('Kategori'), _('Alergen'), _('Ketersediaan'), _('Status'),
+                _('Versi Resep'), _('Tanggal Berlaku'), _('Jumlah Bahan')], rows
 
     def _recipes(self):
-        domain = [('state', '=', 'published')] + self._division_domain()
+        domain = self._division_domain(category_field='menu_id.category')
+        domain += ([('state', 'in', ['published', 'archived']), ('version', '=', self.version_no)] if self.version_no
+                   else [('state', '=', 'published')])
         if self.menu_ids:
             domain.append(('menu_id', 'in', self.menu_ids.ids))
         return self.env['kopitera.recipe'].search(domain, order='division, menu_id')
@@ -83,8 +101,10 @@ class KopiteraReportWizard(models.TransientModel):
             for line in recipe.line_ids:
                 rows.append([recipe.menu_id.name, recipe.version,
                              fields.Datetime.to_string(recipe.released_at)[:10] if recipe.released_at else '-',
-                             line.ingredient_id.name, _fmt(line.quantity), UNIT_LABELS.get(line.unit, line.unit)])
-        return [_('Menu'), _('Versi'), _('Berlaku Sejak'), _('Bahan Baku'), _('Takaran per Porsi'), _('Satuan')], rows
+                             recipe.portion_qty, line.ingredient_id.name, _fmt(line.quantity),
+                             UNIT_LABELS.get(line.unit, line.unit)])
+        return [_('Menu'), _('Versi'), _('Berlaku Sejak'), _('Jumlah Porsi'), _('Bahan Baku'), _('Takaran per Porsi'),
+                _('Satuan')], rows
 
     def _history_logs(self):
         domain = self._division_domain()
@@ -112,7 +132,8 @@ class KopiteraReportWizard(models.TransientModel):
         return getattr(self, '_%s_rows' % self.report_type)()
 
     # --------------------------------------------------------------- preview
-    @api.depends('report_type', 'division', 'menu_ids', 'menu_status', 'history_action', 'date_from', 'date_to')
+    @api.depends('report_type', 'division', 'category', 'version_no', 'menu_ids', 'menu_status', 'history_action',
+                 'date_from', 'date_to')
     def _compute_preview(self):
         for wizard in self:
             if wizard.date_from and wizard.date_to and wizard.date_from > wizard.date_to:
@@ -137,7 +158,25 @@ class KopiteraReportWizard(models.TransientModel):
         self._check_dates()
         if self.output_format == 'pdf':
             return self.env.ref('kopitera_master.action_report_kopitera').report_action(self)
+        if self.output_format == 'csv':
+            return self._export_csv()
         return self._export_xlsx()
+
+    def _download(self, content, extension):
+        self.write({'file_data': base64.b64encode(content),
+                    'file_name': 'kopitera-%s-%s.%s' % (self.report_type, fields.Date.context_today(self), extension)})
+        return {'type': 'ir.actions.act_url', 'target': 'self',
+                'url': '/web/content/?model=%s&id=%s&field=file_data&filename_field=file_name&download=true' % (self._name, self.id)}
+
+    def _export_csv(self):
+        header, rows = self._get_table()
+        buffer = io.StringIO()
+        writer = csv.writer(buffer, delimiter=';')
+        writer.writerow(header)
+        for row in rows:
+            writer.writerow(['' if value is None else value for value in row])
+        # utf-8-sig agar Excel berbahasa Indonesia membaca huruf dan pemisah ';' dengan benar.
+        return self._download(buffer.getvalue().encode('utf-8-sig'), 'csv')
 
     def _export_xlsx(self):
         if not xlsxwriter:

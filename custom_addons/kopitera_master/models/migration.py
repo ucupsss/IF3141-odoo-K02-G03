@@ -11,19 +11,25 @@ from odoo import api, fields, models, _
 from odoo.exceptions import AccessError, UserError
 
 from .account import ROLES, BRANCHES
+from .recipe import AVAILABILITY, CATEGORY_DIVISION, MENU_CATEGORIES, UNIT_CATEGORY, UNITS, precise_enough
 
 NS = {'m': 'http://schemas.openxmlformats.org/spreadsheetml/2006/main'}
 REL_NS = '{http://schemas.openxmlformats.org/officeDocument/2006/relationships}id'
 
 SHEETS = {
-    'Menu': ['Nama Menu', 'Divisi', 'Deskripsi', 'Alergen', 'Langkah Penyiapan'],
+    'Menu': ['Nama Menu', 'Divisi', 'Kategori', 'Deskripsi', 'Alergen', 'Status Ketersediaan', 'Jumlah Porsi',
+             'Langkah Penyiapan'],
     'Bahan': ['Nama Bahan', 'Satuan', 'Area Penggunaan'],
-    'Resep': ['Nama Menu', 'Nama Bahan', 'Takaran'],
+    'Resep': ['Nama Menu', 'Nama Bahan', 'Takaran', 'Satuan'],
     'Akun': ['Nama', 'Login', 'Peran', 'Cabang'],
 }
 DIVISION_ALIASES = {'bar': 'bar', 'minuman': 'bar', 'kitchen': 'kitchen', 'makanan': 'kitchen'}
 AREA_ALIASES = dict(DIVISION_ALIASES, shared='shared', bersama='shared', **{'bar dan kitchen': 'shared'})
-UNIT_ALIASES = {'g': 'g', 'gram': 'g', 'ml': 'ml', 'mililiter': 'ml', 'pcs': 'pcs', 'buah': 'pcs'}
+UNIT_ALIASES = {'g': 'g', 'gram': 'g', 'kg': 'kg', 'kilogram': 'kg', 'ml': 'ml', 'mililiter': 'ml',
+                'l': 'l', 'liter': 'l', 'pcs': 'pcs', 'buah': 'pcs'}
+CATEGORY_ALIASES = {label.lower(): key for key, label in MENU_CATEGORIES} | {key: key for key, _label in MENU_CATEGORIES}
+AVAILABILITY_ALIASES = ({label.lower(): key for key, label in AVAILABILITY} | {key: key for key, _label in AVAILABILITY}
+                        | {'musiman': 'seasonal', 'terbatas': 'seasonal'})
 ROLE_ALIASES = {label.lower(): key for key, label in ROLES} | {key: key for key, _label in ROLES}
 BRANCH_ALIASES = {label.lower(): key for key, label in BRANCHES} | {key: key for key, _label in BRANCHES}
 
@@ -128,9 +134,11 @@ class KopiteraImportWizard(models.TransientModel):
         book = xlsxwriter.Workbook(buffer, {'in_memory': True})
         head = book.add_format({'bold': True, 'bg_color': '#E9ECEF', 'border': 1})
         notes = {
-            'Menu': 'Divisi: bar atau kitchen',
-            'Bahan': 'Satuan: g, ml, atau pcs | Area: bar, kitchen, atau shared',
-            'Resep': 'Satu baris per bahan; takaran per porsi > 0',
+            'Menu': 'Divisi: bar atau kitchen | Kategori: Kopi, Non-Kopi, Light Meals, Main Course, Rice Bowl, Pasta, Dessert | '
+                    'Status Ketersediaan: Tersedia, Musiman, Tidak Tersedia (kosong = Tersedia) | Jumlah Porsi kosong = 1',
+            'Bahan': 'Satuan: g, kg, ml, l, atau pcs | Area: bar, kitchen, atau shared',
+            'Resep': 'Satu baris per bahan; takaran per porsi > 0 | Satuan kosong = satuan baku bahan; harus satu kategori '
+                     '(g/kg, ml/l, pcs) | Ketelitian: bar 0,1, kitchen bilangan bulat (dalam g/ml)',
             'Akun': 'Opsional. Peran: manager, head_bar, head_kitchen, head_floor, mod, staf_bar, staf_kitchen | Cabang: karawitan, dago, burangrang, jakarta',
         }
         for name, header in SHEETS.items():
@@ -173,14 +181,22 @@ class KopiteraImportWizard(models.TransientModel):
         Menu = self.env['kopitera.menu'].sudo().with_context(active_test=False)
         Ingredient = self.env['kopitera.ingredient'].sudo().with_context(active_test=False)
         errors, plan = [], {'menus': [], 'ingredients': [], 'recipes': [], 'accounts': []}
-        menu_names, ingredient_units = {}, {}
+        menu_names, ingredient_units, base_units = {}, {}, {}
 
         for number, row in records('Menu'):
             key, division = row['Nama Menu'].lower(), DIVISION_ALIASES.get(row['Divisi'].lower())
+            category = CATEGORY_ALIASES.get(row['Kategori'].lower()) if row['Kategori'] else False
+            portions = row['Jumlah Porsi'] or '1'
             if not row['Nama Menu']:
                 errors.append(('Menu', number, _('Nama menu kosong.')))
             elif not division:
                 errors.append(('Menu', number, _('Divisi "%s" tidak dikenal (bar/kitchen).') % row['Divisi']))
+            elif row['Kategori'] and (not category or CATEGORY_DIVISION[category] != division):
+                errors.append(('Menu', number, _('Kategori "%s" tidak dikenal atau tidak sesuai divisi.') % row['Kategori']))
+            elif row['Status Ketersediaan'] and row['Status Ketersediaan'].lower() not in AVAILABILITY_ALIASES:
+                errors.append(('Menu', number, _('Status ketersediaan "%s" tidak dikenal.') % row['Status Ketersediaan']))
+            elif not re.fullmatch(r'\d+(\.0+)?', portions) or float(portions) < 1:
+                errors.append(('Menu', number, _('Jumlah porsi "%s" harus bilangan bulat minimal 1.') % row['Jumlah Porsi']))
             elif key in menu_names or Menu.search_count([('name', '=ilike', row['Nama Menu'])]):
                 errors.append(('Menu', number, _('Menu "%s" sudah terdaftar.') % row['Nama Menu']))
             else:
@@ -193,13 +209,14 @@ class KopiteraImportWizard(models.TransientModel):
             if not row['Nama Bahan']:
                 errors.append(('Bahan', number, _('Nama bahan kosong.')))
             elif not unit:
-                errors.append(('Bahan', number, _('Satuan "%s" bukan satuan baku (g/ml/pcs).') % row['Satuan']))
+                errors.append(('Bahan', number, _('Satuan "%s" bukan satuan baku (g/kg/ml/l/pcs).') % row['Satuan']))
             elif not area:
                 errors.append(('Bahan', number, _('Area "%s" tidak dikenal (bar/kitchen/shared).') % row['Area Penggunaan']))
             elif key in ingredient_units or Ingredient.search_count([('name', '=ilike', row['Nama Bahan'])]):
                 errors.append(('Bahan', number, _('Bahan "%s" sudah terdaftar.') % row['Nama Bahan']))
             else:
                 ingredient_units[key] = area
+                base_units[key] = unit
                 plan['ingredients'].append((number, row, unit, area))
 
         grouped = {}
@@ -217,14 +234,24 @@ class KopiteraImportWizard(models.TransientModel):
                 problems.append(_('Menu "%s" tidak ada di lembar Menu maupun sistem.') % lines[0][1]['Nama Menu'])
             for number, row in lines:
                 ing_key = row['Nama Bahan'].lower()
-                area = ingredient_units.get(ing_key)
+                area, base_unit = ingredient_units.get(ing_key), base_units.get(ing_key)
                 if not area:
                     existing = Ingredient.search([('name', '=ilike', row['Nama Bahan']), ('active', '=', True)], limit=1)
-                    area = existing.division if existing else None
+                    area, base_unit = (existing.division, existing.unit) if existing else (None, None)
                 try:
                     quantity = float(str(row['Takaran']).replace(',', '.'))
                 except ValueError:
                     quantity = 0
+                unit = UNIT_ALIASES.get(row['Satuan'].lower()) if row['Satuan'] else base_unit
+                if row['Satuan'] and not unit:
+                    problems.append(_('baris %s: satuan "%s" bukan satuan baku') % (number, row['Satuan']))
+                elif unit and base_unit and UNIT_CATEGORY[unit] != UNIT_CATEGORY[base_unit]:
+                    problems.append(_('baris %s: satuan %s tidak satu kategori dengan satuan baku %s') % (
+                        number, dict(UNITS)[unit], dict(UNITS)[base_unit]))
+                elif unit and base_unit and quantity > 0 and menu_division:
+                    if not precise_enough(quantity, unit, menu_division):
+                        problems.append(_('baris %s: takaran melebihi ketelitian %s') % (
+                            number, _('dapur (1 g/ml)') if menu_division == 'kitchen' else _('bar (0,1 g/ml)')))
                 if not area:
                     problems.append(_('baris %s: bahan "%s" tidak ditemukan') % (number, row['Nama Bahan']))
                 elif menu_division and area not in ('shared', menu_division):
@@ -302,11 +329,14 @@ class KopiteraImportWizard(models.TransientModel):
         env = self.env(su=True)
         Menu, Ingredient, Recipe = env['kopitera.menu'], env['kopitera.ingredient'], env['kopitera.recipe']
         created = {'Menu': 0, 'Bahan': 0, 'Resep': 0, 'Akun': 0}
-        instructions = {}
+        instructions, portions = {}, {}
         for _number, row, division in plan['menus']:
             Menu.create({'name': row['Nama Menu'], 'division': division,
+                         'category': CATEGORY_ALIASES.get(row['Kategori'].lower()) if row['Kategori'] else False,
+                         'availability': AVAILABILITY_ALIASES.get(row['Status Ketersediaan'].lower(), 'available'),
                          'description': row['Deskripsi'] or False, 'allergens': row['Alergen'] or False})
             instructions[row['Nama Menu'].lower()] = row['Langkah Penyiapan']
+            portions[row['Nama Menu'].lower()] = int(float(row['Jumlah Porsi'] or 1))
             created['Menu'] += 1
         for _number, row, unit, area in plan['ingredients']:
             Ingredient.create({'name': row['Nama Bahan'], 'unit': unit, 'division': area})
@@ -318,8 +348,11 @@ class KopiteraImportWizard(models.TransientModel):
                 'menu_id': menu.id,
                 'reason': _('Versi awal hasil migrasi data dari %s.') % (self.file_name or 'Excel'),
                 'instructions': instructions.get(key) or _('Mengikuti resep hasil migrasi data awal.'),
-                'line_ids': [(0, 0, {'ingredient_id': Ingredient.search([('name', '=ilike', row['Nama Bahan'])], limit=1).id,
-                                     'quantity': float(str(row['Takaran']).replace(',', '.'))}) for _n, row in lines],
+                'portion_qty': portions.get(key, 1),
+                'line_ids': [(0, 0, dict({'ingredient_id': Ingredient.search([('name', '=ilike', row['Nama Bahan'])], limit=1).id,
+                                          'quantity': float(str(row['Takaran']).replace(',', '.'))},
+                                         **({'unit': UNIT_ALIASES[row['Satuan'].lower()]} if row['Satuan'] else {})))
+                             for _n, row in lines],
             })
             recipe._transition({'state': 'published', 'version': 1, 'released_at': fields.Datetime.now(),
                                 'author_id': self.env.uid})

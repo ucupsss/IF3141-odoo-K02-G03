@@ -1,48 +1,50 @@
 # Pemetaan layar Milestone 4 — Kopitera
 
-Tanggal penyusunan: 10 November 2026. Acuan: tabel UC-01–UC-13 pada laporan Milestone 4 kelompok K02/G03. Pilihan tampilan: screenshot langsung Odoo 17 Community lokal. Dokumen ini merupakan rencana kerja dan catatan cakupan, bukan bukti bahwa semua layar telah selesai.
+Diperbarui 14 November 2026 untuk modul `kopitera_master` versi `17.0.1.3.0`. Tampilan berupa screenshot langsung Odoo 17 Community, diambil dengan akun aktor yang sesuai. Seluruh 22 layar sudah tersedia dan diverifikasi.
+
+- Screenshot final: `docs/screenshots/m4/` (nama berkas diawali ID layar).
+- Isi siap salin untuk laporan (Tabel Screen Mockup 1.36–1.57 dan Tabel Pemetaan Layar 1.58): `docs/M4-I7-User-Interface-Kopitera.docx`.
+- Penomoran tabel mengasumsikan penomoran Bab I sudah diurutkan ulang (lihat `CATATAN-REVISI-LAPORAN.md`).
 
 ## Keputusan rancangan
 
-- Rilis dijalankan **manual oleh Manager Area**, pada atau setelah tanggal rilis. Ini mengikuti UC-06 dan Milestone 3. Narasi DFD proses 3.3 di Milestone 4 yang masih menyebut rilis otomatis perlu diperbaiki oleh penanggung jawab DFD.
-- Pengaju tidak boleh menjadi pemeriksa untuk pengajuannya sendiri. Akun pemeriksa tambahan adalah akun uji untuk peran Head Bar/Head Kitchen yang sama, bukan aktor organisasi baru.
-- Isi resep aktif tidak berubah ketika draf dibuat, diperiksa, atau disetujui. Rilis mengaktifkan versi baru dan mengarsipkan versi sebelumnya.
-- Staf Bar hanya membaca resep minuman yang berlaku; Staf Kitchen hanya resep makanan yang berlaku. Manager on Duty dan Head Floor membaca keduanya.
-- Modul tahap pertama menyimpan resep pada model Kopitera tersendiri. Sinkronisasi ke Manufacturing / `mrp.bom`, konversi satuan, dan integrasi dRetail belum dilakukan. Hindari menyebut prototipe ini sebagai implementasi BoM Manufacturing lengkap dalam laporan.
+- Rilis dijalankan **manual oleh Manager Area** pada atau setelah tanggal rilis (UC-06, FR-08).
+- Pengaju tidak boleh memeriksa pengajuannya sendiri. Akun `reviewerbar`/`reviewerkitchen` adalah akun uji kedua untuk peran Head Bar/Head Kitchen, bukan aktor baru.
+- Isi resep berlaku tidak berubah selama pengajuan diproses. Rilis mengaktifkan versi baru, mengarsipkan versi lama, dan memperbarui BoM Manufacturing.
+- Staf Bar hanya membaca resep minuman berlaku; Staf Kitchen hanya makanan. Manager on Duty dan Head Floor membaca keduanya. Head Floor juga menerima notifikasi rilis dan dapat membuat laporan.
 
-## Daftar 22 layar / keadaan layar
+## Daftar layar
 
-Satu form Odoo dapat menghasilkan beberapa screenshot karena aktor, status, dan tombol yang tampil berbeda. ID L01–L22 adalah usulan penomoran layar untuk laporan; jumlah akhir harus mengikuti kebutuhan skenario, bukan kuota gambar.
-
-| ID | Nama layar / keadaan | UC terkait | Pengguna | Kesiapan tahap pertama |
+| ID | Nama layar | UC | Pengguna | Berkas screenshot |
 |---|---|---|---|---|
-| L01 | Login | Prasyarat semua UC | Semua pengguna | Bawaan Odoo; siap |
-| L02 | Katalog menu | UC-01, UC-10 | Head Bar/Kitchen, Manager Area, pengguna cabang | Daftar baca dan pengajuan tambah/ubah/nonaktif tersedia |
-| L03 | Detail menu dan tautan resep berlaku | UC-01, UC-10 | Pengguna sesuai divisi | Detail baca tersedia |
-| L04 | Form pengajuan menu baru/ubah/nonaktif | UC-01 | Head Bar/Kitchen | Tersedia; diperiksa, disetujui, lalu dirilis |
-| L05 | Daftar dan detail bahan baku | UC-02 | Head Bar/Kitchen, Manager Area | Data referensi baca tersedia |
-| L06 | Form pengajuan bahan baru/ubah/nonaktif | UC-02 | Head Bar/Kitchen | Tersedia; penonaktifan bahan yang dipakai resep berlaku ditolak |
-| L07 | Daftar pengajuan resep dengan filter status | UC-03, UC-04, UC-05, UC-06 | Head Bar/Kitchen, Manager Area | Tersedia |
-| L08 | Form draf resep: komposisi, gramasi, langkah, alasan | UC-03 | Head Bar/Kitchen pengaju | Tersedia; termasuk keadaan Perlu Perbaikan |
-| L09 | Pemeriksaan dan catatan perbaikan | UC-04 | Head Bar/Kitchen selain pengaju | Tersedia pada form berstatus Menunggu Pemeriksaan |
-| L10 | Perbandingan usulan dengan versi berlaku | UC-04, UC-08 | Pemeriksa, Manager Area | Perbandingan menu/bahan tersedia; perbandingan gramasi resep belum |
-| L11 | Persetujuan/penolakan dan tanggal rilis | UC-05 | Manager Area | Tersedia pada form berstatus Menunggu Persetujuan |
-| L12 | Daftar pengajuan menunggu rilis | UC-06 | Manager Area | Tersedia melalui filter Menunggu Rilis |
-| L13 | Konfirmasi rilis dan hasil versi berlaku | UC-06 | Manager Area | Tombol, dialog konfirmasi, dan status hasil tersedia |
-| L14 | Daftar riwayat versi resep | UC-07 | Head Bar/Kitchen, Manager Area | Daftar versi tersedia; data contoh awal hanya versi 1 |
-| L15 | Detail versi arsip dan riwayat aktivitas | UC-07 | Head Bar/Kitchen, Manager Area | Form versi dan chatter tersedia; perbandingan nilai gramasi lama/baru belum lengkap |
-| L16 | Form pemulihan versi dan alasan | UC-08 | Manager Area | Belum dibuat |
-| L17 | Daftar akun pengguna | UC-09 | Manager Area | Pengelolaan bawaan hanya admin; delegasi aman ke Manager Area belum dibuat |
-| L18 | Tambah/ubah/nonaktifkan akun dan peran | UC-09 | Manager Area | Akun uji sudah disiapkan; form khusus pengelolaan oleh Manager Area belum dibuat |
-| L19 | Resep berlaku untuk staf, baca saja | UC-10 | Staf Bar/Kitchen, Manager on Duty, Head Floor | Tersedia dengan batas divisi dan status |
-| L20 | Filter, pratinjau, dan ekspor laporan | UC-11 | Pengguna yang berhak sesuai laporan | Ekspor daftar bawaan Odoo; laporan PDF dan formulir rekap khusus belum dibuat |
-| L21 | Notifikasi dan tautan ke pengajuan | UC-12 | Head Bar/Kitchen, Manager Area, Head Floor | Aktivitas pemeriksaan/persetujuan tersedia; notifikasi rilis ke seluruh penerima belum lengkap |
-| L22 | Impor Excel dan ringkasan berhasil/gagal | UC-13 | Pengembang Eksternal | Belum dibuat sebagai alur migrasi lengkap; data referensi tahap pertama dimuat melalui XML |
+| L01 | Login | Semua | Semua pengguna | `L01_login.png` |
+| L02 | Katalog Menu | UC-01, UC-10 | Head, Manager, pengguna cabang | `L02_katalog_menu.png` |
+| L03 | Detail Menu | UC-01, UC-10 | Head Bar/Kitchen | `L03_detail_menu.png` |
+| L04 | Pengajuan Menu | UC-01 | Head Bar/Kitchen | `L04_pengajuan_menu.png`, `L04b_…perbandingan.png` |
+| L05 | Daftar Bahan Baku | UC-02 | Head Bar/Kitchen, Manager | `L05_bahan_baku.png` |
+| L06 | Pengajuan Bahan Baku | UC-02 | Head Bar/Kitchen | `L06_pengajuan_bahan.png` |
+| L07 | Daftar Pengajuan Resep | UC-03/04/05 | Head Bar/Kitchen, Manager | `L07_daftar_pengajuan_resep.png` |
+| L08 | Draf Resep dan Gramasi | UC-03 | Head Bar/Kitchen (pengaju) | `L08_draf_resep.png` |
+| L09 | Pemeriksaan Pengajuan | UC-04 | Head Bar/Kitchen (pemeriksa) | `L09_pemeriksaan.png` |
+| L10 | Perbandingan Gramasi | UC-04 | Pemeriksa, Manager | `L10_perbandingan_gramasi.png` |
+| L11 | Persetujuan/Penolakan | UC-05 | Manager Area | `L11_persetujuan.png` |
+| L12 | Menunggu Rilis | UC-06 | Manager Area | `L12_menunggu_rilis.png` |
+| L13 | Konfirmasi dan Hasil Rilis | UC-06 | Manager Area | `L13_konfirmasi_rilis.png`, `L13b_hasil_rilis.png` |
+| L14 | Riwayat Versi Resep | UC-07 | Head Bar/Kitchen, Manager | `L14_riwayat_versi.png` |
+| L15 | Detail Versi Arsip dan Log Audit | UC-07, UC-08 | Head Bar/Kitchen, Manager | `L15_detail_versi_arsip.png`, `L15b_…perbandingan.png`, `L15c_log_audit.png` |
+| L16 | Pemulihan Versi | UC-08 | Manager Area | `L16_pemulihan_versi.png` |
+| L17 | Daftar Akun Pengguna | UC-09 | Manager Area | `L17_daftar_akun.png` |
+| L18 | Form Akun dan Peran | UC-09 | Manager Area | `L18_form_akun.png` |
+| L19 | Resep Berlaku (baca saja) | UC-10 | Staf, MoD, Head Floor | `L19a_…`, `L19_resep_berlaku_staf.png` |
+| L20 | Laporan Rekap dan Ekspor | UC-11 | Manager, Head Bar/Kitchen, Head Floor | `L20_laporan.png`, `L20b_pdf_lembar_resep-1.png`, `L20c_pdf_riwayat-1.png` |
+| L21 | Notifikasi | UC-12 | Manager, Head Bar/Kitchen, Head Floor | `L21_notifikasi.png` (Head Floor), `L21b_notifikasi_manager.png` |
+| L22 | Migrasi Data Awal dan Log Migrasi | UC-13 | Pengembang Eksternal | `L22a_…unggah`, `L22_…pratinjau`, `L22b_…selesai`, `L22c_log_migrasi.png` |
 
-## Pemetaan use case ke layar
+## Pemetaan use case ke layar (I.7.2)
 
 | Use case | Layar |
 |---|---|
+| Prasyarat semua UC | L01 |
 | UC-01 Mengelola Data Menu | L02, L03, L04 |
 | UC-02 Mengelola Data Bahan Baku | L05, L06 |
 | UC-03 Mengelola Resep dan Gramasi | L07, L08 |
@@ -50,23 +52,13 @@ Satu form Odoo dapat menghasilkan beberapa screenshot karena aktor, status, dan 
 | UC-05 Menyetujui atau Menolak Pengajuan | L07, L11 |
 | UC-06 Merilis Perubahan | L12, L13 |
 | UC-07 Melihat Riwayat dan Versi Resep | L14, L15 |
-| UC-08 Memulihkan Versi Resep | L15, L16, L10 |
+| UC-08 Memulihkan Versi Resep | L15, L16 |
 | UC-09 Mengelola Akun dan Hak Akses | L17, L18 |
 | UC-10 Melihat Data Berlaku | L02, L03, L19 |
 | UC-11 Membuat Laporan Rekap dan Ekspor | L20 |
-| UC-12 Menerima Notifikasi Pengajuan dan Rilis | L21, layar pengajuan/menu tujuan |
+| UC-12 Menerima Notifikasi Pengajuan dan Rilis | L21 |
 | UC-13 Memigrasikan Data Awal dari Excel | L22 |
 
-## Urutan pengerjaan berikutnya
+## Mengambil ulang screenshot
 
-1. Validasi bersama anggota A/B/D bahwa aktor, alur manual, dan penomoran UC konsisten.
-2. Pengajuan menu/bahan telah tersedia. Validasi kesesuaian isian dan skenarionya bersama anggota A/B sebelum mengambil screenshot final.
-3. Lengkapi perbandingan versi, pemulihan, pengelolaan akun oleh Manager Area, laporan, notifikasi rilis, dan migrasi.
-4. Ambil screenshot menggunakan akun yang sesuai, termasuk keadaan perbaikan, penolakan, dan versi arsip. Hindari akun admin untuk membuktikan pembatasan akses staf.
-5. Masukkan setiap screenshot ke I.7.1 dengan Nama Layar, Deskripsi, Pengguna, dan Tampilan Layar. Gunakan pemetaan di atas sebagai dasar I.7.2.
-
-Laporan Word asli belum diubah. Tahap pertama ini mendukung demonstrasi alur utama dan bukan penyelesaian seluruh tugas orang C atau seluruh Milestone 4.
-
-## Pembaruan tahap kedua — 10 November 2026
-
-UC-01/02 sudah tersedia dalam menu Pengajuan Menu dan Pengajuan Bahan. Snapshot data sebelum/sesudah, pemeriksaan ulang saat data berubah, serta validasi bahan aktif sudah diuji. Contoh Es Teh Lemon berada pada Menunggu Pemeriksaan setelah dikirim melalui browser; Sirup Vanila masih Draf. Lihat `COBA-MENU-DAN-BAHAN.md`.
+Screenshot dibuat dari database demo bersih: `setup_kopitera_demo.py` → `seed_master_demo.py` → beberapa pengajuan pada tiap status (draf, menunggu pemeriksaan, menunggu persetujuan, menunggu rilis, ditolak, versi arsip). Jika ingin mengambil ulang di laptop sendiri, gunakan akun aktor yang sesuai, bukan admin, agar pembatasan akses terlihat.

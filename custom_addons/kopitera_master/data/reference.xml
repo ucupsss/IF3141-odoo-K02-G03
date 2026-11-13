@@ -9,12 +9,14 @@
   <record id="menu_kopi_susu" model="kopitera.menu">
     <field name="name">Es Kopi Susu — Contoh</field>
     <field name="division">bar</field>
+    <field name="category">coffee</field>
     <field name="description">Data fiktif untuk demonstrasi tugas; bukan resep operasional Kopitera.</field>
     <field name="allergens">Susu</field>
   </record>
   <record id="menu_nasi_goreng" model="kopitera.menu">
     <field name="name">Nasi Goreng — Contoh</field>
     <field name="division">kitchen</field>
+    <field name="category">main_course</field>
     <field name="description">Data fiktif untuk demonstrasi tugas; bukan resep operasional Kopitera.</field>
     <field name="allergens">Telur, kedelai</field>
   </record>

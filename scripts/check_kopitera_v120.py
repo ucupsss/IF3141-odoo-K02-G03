@@ -184,7 +184,7 @@ try:
                    ['Es Kopi Susu — Contoh', 'bar', 'duplikat', '', ''],
                    ['Menu Salah', 'dapur', '', '', '']])
     sheet('Bahan', [['Nama Bahan', 'Satuan', 'Area Penggunaan'], ['Bubuk Matcha Uji', 'g', 'bar'],
-                    ['Bahan Salah', 'kg', 'bar']])
+                    ['Bahan Salah', 'sdm', 'bar']])
     sheet('Resep', [['Nama Menu', 'Nama Bahan', 'Takaran'], ['Matcha Latte Uji', 'Bubuk Matcha Uji', 5],
                     ['Matcha Latte Uji', 'Susu Cair', 150], ['Menu Tak Ada', 'Susu Cair', 10]])
     sheet('Akun', [['Nama', 'Login', 'Peran', 'Cabang'], ['Staf Migrasi', 'stafmigrasi.kopitera', 'staf_kitchen', 'dago']])

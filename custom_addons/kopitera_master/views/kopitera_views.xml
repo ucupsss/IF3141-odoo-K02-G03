@@ -1,12 +1,15 @@
 <odoo>
   <record id="menu_tree" model="ir.ui.view"><field name="name">kopitera.menu.tree</field><field name="model">kopitera.menu</field><field name="arch" type="xml">
-    <tree string="Katalog Menu" create="0" edit="0" delete="0"><field name="name"/><field name="division"/><field name="allergens"/><field name="current_recipe_id"/></tree>
+    <tree string="Katalog Menu" create="0" edit="0" delete="0"><field name="name"/><field name="division"/><field name="category"/><field name="allergens"/><field name="availability" widget="badge" decoration-success="availability == 'available'" decoration-warning="availability == 'seasonal'" decoration-muted="availability == 'unavailable'"/><field name="current_recipe_id"/></tree>
   </field></record>
   <record id="menu_form" model="ir.ui.view"><field name="name">kopitera.menu.form</field><field name="model">kopitera.menu</field><field name="arch" type="xml">
     <form string="Menu Kopitera" create="0" edit="0" delete="0">
       <header><button name="action_propose_recipe" type="object" string="Ajukan Resep / Perubahan" class="oe_highlight" groups="kopitera_master.group_editor"/></header>
-      <sheet><div class="oe_title"><h1><field name="name"/></h1></div><group><group><field name="division"/><field name="allergens"/></group><group><field name="current_recipe_id" options="{'no_create': True}"/></group></group><field name="description"/><div class="alert alert-info" role="alert">Buka Resep Berlaku untuk melihat komposisi dan gramasi terbaru. Resep berubah setelah Manager Area menjalankan rilis.</div></sheet>
+      <sheet><div class="oe_title"><h1><field name="name"/></h1></div><group><group><field name="division"/><field name="category"/><field name="allergens"/></group><group><field name="availability"/><field name="current_recipe_id" options="{'no_create': True}"/></group></group><field name="description"/><div class="alert alert-info" role="alert">Buka Resep Berlaku untuk melihat komposisi dan gramasi terbaru. Resep berubah setelah Manager Area menjalankan rilis.</div></sheet>
     </form>
+  </field></record>
+  <record id="menu_search" model="ir.ui.view"><field name="name">kopitera.menu.search</field><field name="model">kopitera.menu</field><field name="arch" type="xml">
+    <search><field name="name"/><field name="allergens"/><filter name="bar" string="Minuman" domain="[('division','=','bar')]"/><filter name="kitchen" string="Makanan" domain="[('division','=','kitchen')]"/><separator/><filter name="available" string="Tersedia" domain="[('availability','=','available')]"/><group expand="0" string="Kelompokkan"><filter name="by_division" string="Jenis Menu" context="{'group_by':'division'}"/><filter name="by_category" string="Kategori" context="{'group_by':'category'}"/></group></search>
   </field></record>
   <record id="ingredient_tree" model="ir.ui.view"><field name="name">kopitera.ingredient.tree</field><field name="model">kopitera.ingredient</field><field name="arch" type="xml">
     <tree create="0" edit="0" delete="0"><field name="name"/><field name="division"/><field name="unit"/></tree>
@@ -24,7 +27,7 @@
     <form string="Pengajuan Resep">
       <header>
         <button name="action_submit" type="object" string="Kirim untuk Diperiksa" class="oe_highlight" groups="kopitera_master.group_editor" invisible="state not in ['draft','revision'] or not is_author"/>
-        <button name="action_review" type="object" string="Sesuai — Teruskan" class="oe_highlight" groups="kopitera_master.group_editor" invisible="state != 'review' or is_author"/>
+        <button name="action_review" type="object" string="Sesuai, Teruskan" class="oe_highlight" groups="kopitera_master.group_editor" invisible="state != 'review' or is_author"/>
         <button name="action_return" type="object" string="Minta Perbaikan" groups="kopitera_master.group_editor" invisible="state != 'review' or is_author"/>
         <button name="action_approve" type="object" string="Setujui" class="oe_highlight" groups="kopitera_master.group_manager" invisible="state != 'approval'"/>
         <button name="action_reject" type="object" string="Tolak" groups="kopitera_master.group_manager" invisible="state != 'approval'"/>
@@ -36,9 +39,9 @@
         <div class="oe_title"><h1><field name="name"/></h1></div>
         <div class="alert alert-success" role="alert" invisible="state != 'published'">Resep ini sedang berlaku. Perubahan berikutnya harus diajukan sebagai draf baru.</div>
         <div class="alert alert-warning" role="alert" invisible="state != 'approved'">Sudah disetujui, tetapi belum berlaku. Manager Area menjalankan rilis pada atau setelah tanggal rilis.</div>
-        <group><group><field name="menu_id" readonly="state not in ['draft','revision'] or not is_author" options="{'no_create': True}"/><field name="division"/><field name="author_id"/><field name="version" invisible="not version"/></group><group><field name="reviewer_id"/><field name="approver_id"/><field name="release_date" readonly="state != 'approval'" groups="kopitera_master.group_manager"/><field name="release_date" readonly="1" groups="!kopitera_master.group_manager"/><field name="released_at" invisible="not released_at"/></group></group>
+        <group><group><field name="menu_id" readonly="state not in ['draft','revision'] or not is_author" options="{'no_create': True}"/><field name="division"/><field name="author_id"/><field name="version" invisible="not version"/><field name="portion_qty" readonly="state not in ['draft','revision'] or not is_author"/></group><group><field name="proposed_release_date" readonly="state not in ['draft','revision'] or not is_author" groups="kopitera_master.group_editor"/><field name="reviewer_id"/><field name="approver_id"/><field name="release_date" readonly="state != 'approval'" groups="kopitera_master.group_manager"/><field name="release_date" readonly="1" groups="!kopitera_master.group_manager"/><field name="released_at" invisible="not released_at"/></group></group>
         <notebook>
-          <page string="Komposisi dan Gramasi"><field name="line_ids" readonly="state not in ['draft','revision'] or not is_author"><tree editable="bottom"><field name="ingredient_id" options="{'no_create': True}"/><field name="quantity"/><field name="unit"/></tree></field><group><field name="instructions" placeholder="Tuliskan langkah penyiapan per porsi..." readonly="state not in ['draft','revision'] or not is_author"/></group></page>
+          <page string="Komposisi dan Gramasi"><field name="line_ids" readonly="state not in ['draft','revision'] or not is_author"><tree editable="bottom"><field name="ingredient_id" options="{'no_create': True}"/><field name="quantity"/><field name="unit" required="1"/><field name="base_unit" optional="show"/></tree></field><group><field name="instructions" placeholder="Tuliskan langkah penyiapan per porsi..." readonly="state not in ['draft','revision'] or not is_author"/></group></page>
           <page string="Pengajuan dan Pemeriksaan" groups="kopitera_master.group_editor"><group><field name="reason" readonly="state not in ['draft','revision'] or not is_author"/><field name="review_note" readonly="state != 'review' or is_author"/><field name="decision_note" readonly="state != 'approval'" groups="kopitera_master.group_manager"/><field name="decision_note" readonly="1" groups="!kopitera_master.group_manager"/></group></page>
         </notebook>
       </sheet>

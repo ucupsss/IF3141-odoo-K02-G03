@@ -33,6 +33,8 @@ try:
     def proposal(kind='menu', operation='create', **vals):
         data = {'kind': kind, 'operation': operation, 'division': 'bar', 'reason': 'Transaction-only master data test',
                 'proposed_name': 'Integration Test Menu', 'unit': 'ml', 'usage': 'bar'}
+        if kind == 'menu':
+            data.update(category='non_coffee', allergens='-', availability='available')
         data.update(vals)
         return Change.with_user(author).create(data)
 

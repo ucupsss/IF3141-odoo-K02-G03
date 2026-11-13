@@ -20,7 +20,7 @@
     <field name="arch" type="xml">
       <form string="Akun Pengguna">
         <header>
-          <button name="action_deactivate" type="object" string="Nonaktifkan Akun" invisible="state != 'active' or not id"
+          <button name="action_deactivate" type="object" string="Nonaktifkan" invisible="state != 'active' or not id"
                   confirm="Nonaktifkan akun ini? Pengguna tidak dapat masuk, tetapi riwayat aktivitasnya tetap tersimpan."/>
           <button name="action_activate" type="object" string="Aktifkan Kembali" class="oe_highlight" invisible="state != 'inactive'"/>
           <field name="state" widget="statusbar"/>

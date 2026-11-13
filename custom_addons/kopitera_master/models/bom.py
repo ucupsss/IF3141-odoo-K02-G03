@@ -6,7 +6,8 @@ sebelumnya diarsipkan, sehingga data resep juga tersedia sebagai BoM standar Odo
 """
 from odoo import fields, models, _
 
-UOM_XMLIDS = {'g': 'uom.product_uom_gram', 'ml': 'kopitera_master.uom_ml', 'pcs': 'uom.product_uom_unit'}
+UOM_XMLIDS = {'g': 'uom.product_uom_gram', 'kg': 'uom.product_uom_kgm', 'ml': 'kopitera_master.uom_ml',
+              'l': 'uom.product_uom_litre', 'pcs': 'uom.product_uom_unit'}
 
 
 class MenuProduct(models.Model):
@@ -82,7 +83,7 @@ class RecipeBom(models.Model):
                 'product_uom_id': menu.product_tmpl_id.uom_id.id,
                 'code': 'Kopitera %s v%s' % (recipe.name, recipe.version),
                 'bom_line_ids': [(0, 0, {'product_id': line.ingredient_id.product_id.id, 'product_qty': line.quantity,
-                                         'product_uom_id': self.env.ref(UOM_XMLIDS[line.ingredient_id.unit]).id})
+                                         'product_uom_id': self.env.ref(UOM_XMLIDS[line.unit or line.ingredient_id.unit]).id})
                                  for line in recipe.line_ids],
             })
             recipe._transition({'bom_id': bom.id})

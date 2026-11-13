@@ -1,7 +1,7 @@
 {
     'name': 'Kopitera',
     'summary': 'Data induk menu, resep, dan gramasi terpusat dengan alur persetujuan, versi, dan BoM',
-    'version': '17.0.1.2.0',
+    'version': '17.0.1.3.0',
     'category': 'Operations',
     'license': 'LGPL-3',
     'author': 'IF3141 K02 G03',
